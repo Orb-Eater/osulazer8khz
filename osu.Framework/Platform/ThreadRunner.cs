@@ -227,7 +227,8 @@ namespace osu.Framework.Platform
             }
             else
             {
-                mainThread.ActiveHz = GameThread.DEFAULT_ACTIVE_HZ;
+                // OSU_INPUT_HZ governs the SDL event pump rate in multi-threaded mode (0 = uncapped spin).
+                mainThread.ActiveHz = FrameworkEnvironment.InputHz;
                 mainThread.InactiveHz = GameThread.DEFAULT_INACTIVE_HZ;
             }
         }

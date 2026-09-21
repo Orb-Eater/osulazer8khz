@@ -29,6 +29,14 @@ namespace osu.Framework.Timing
         public bool Throttling = true;
 
         /// <summary>
+        /// The trailing portion (in milliseconds) of each throttled wait which is burnt on-CPU instead of being
+        /// handed to a kernel timer. Windows' high-resolution waitable timer has a practical granularity of a few
+        /// hundred microseconds, so sub-millisecond target periods can only be hit accurately by spinning.
+        /// Defaults to <c>0</c>, which preserves the original sleep-only behaviour exactly.
+        /// </summary>
+        public double SpinWaitThreshold;
+
+        /// <summary>
         /// The time spent in a Thread.Sleep state during the last frame.
         /// </summary>
         public double TimeSlept { get; private set; }
@@ -51,15 +59,19 @@ namespace osu.Framework.Timing
 
             if (Throttling)
             {
-                if (MaximumUpdateHz > 0 && MaximumUpdateHz < double.MaxValue)
+                // Anything at or above int.MaxValue is "unlimited" (GameHost hands the clock int.MaxValue for
+                // FrameSync.Unlimited), and must skip the throttle path entirely rather than computing a zero sleep
+                // and a per-frame accumulatedSleepError update that can never do anything.
+                if (MaximumUpdateHz > 0 && MaximumUpdateHz < int.MaxValue)
                 {
                     throttle();
                 }
                 else
                 {
-                    // Even when running at unlimited frame-rate, we should call the scheduler
-                    // to give lower-priority background processes a chance to do work.
-                    TimeSlept = sleepAndUpdateCurrent(0);
+                    // Unlimited means unlimited: never sleep, never yield, never enter the throttle path.
+                    // (the old sleepAndUpdateCurrent(0) call returned immediately at its "milliseconds <= 0" guard
+                    // without yielding, so dropping it is behaviourally identical minus one call per frame.)
+                    TimeSlept = 0;
                 }
             }
             else
@@ -93,10 +105,24 @@ namespace osu.Framework.Timing
 
             double before = CurrentTime;
 
-            TimeSpan timeSpan = TimeSpan.FromMilliseconds(milliseconds);
+            double toSleep = milliseconds - SpinWaitThreshold;
 
-            if (nativeSleep?.Sleep(timeSpan) != true)
-                Thread.Sleep(timeSpan);
+            if (toSleep > 0)
+            {
+                TimeSpan timeSpan = TimeSpan.FromMilliseconds(toSleep);
+
+                if (nativeSleep?.Sleep(timeSpan) != true)
+                    Thread.Sleep(timeSpan);
+            }
+
+            if (SpinWaitThreshold > 0)
+            {
+                // Burn the remainder on-CPU. The backing source is a free-running StopwatchClock, so this always terminates.
+                double target = before + milliseconds;
+
+                while (SourceTime < target)
+                    Thread.SpinWait(8);
+            }
 
             return (CurrentTime = SourceTime) - before;
         }

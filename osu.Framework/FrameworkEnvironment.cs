@@ -23,6 +23,20 @@ namespace osu.Framework
         public static bool UseSDL3 { get; }
 
         /// <summary>
+        /// An optional hard ceiling (in Hz) applied to the "unlimited" frame limiter, read from the
+        /// OSU_MAX_SANE_HZ environment variable at process start.
+        /// When null (the default), "unlimited" means unlimited. Set OSU_MAX_SANE_HZ=1000 to restore
+        /// upstream osu!framework behaviour exactly.
+        /// </summary>
+        public static int? MaximumSaneFps { get; }
+
+        /// <summary>
+        /// The target rate (in Hz) for the input thread / SDL event pump, from the <c>OSU_INPUT_HZ</c> environment variable.
+        /// Unset defaults to 8000. A value of <c>0</c> means uncapped: the clock spins without ever sleeping.
+        /// </summary>
+        public static double InputHz { get; }
+
+        /// <summary>
         /// Whether non-SSL requests should be allowed. Debug only. Defaults to disabled.
         /// When disabled, http:// requests will be automatically converted to https://.
         /// </summary>
@@ -31,6 +45,9 @@ namespace osu.Framework
         static FrameworkEnvironment()
         {
             StartupExecutionMode = Enum.TryParse<ExecutionMode>(Environment.GetEnvironmentVariable("OSU_EXECUTION_MODE"), true, out var mode) ? mode : null;
+
+            // OSU_INPUT_HZ: unset => 8000, "0" => uncapped (pure spin, no sleep at all), N => N Hz.
+            InputHz = int.TryParse(Environment.GetEnvironmentVariable("OSU_INPUT_HZ"), out int inputHz) && inputHz >= 0 ? inputHz : 8000;
 
             NoTestTimeout = parseBool(Environment.GetEnvironmentVariable("OSU_TESTS_NO_TIMEOUT")) ?? false;
             ForceTestGC = parseBool(Environment.GetEnvironmentVariable("OSU_TESTS_FORCED_GC")) ?? false;
@@ -49,6 +66,10 @@ namespace osu.Framework
             NoStructuredBuffers = parseBool(Environment.GetEnvironmentVariable("OSU_GRAPHICS_NO_SSBO")) ?? false;
 
             DeferredRendererEventsOutputPath = Environment.GetEnvironmentVariable("DEFERRED_RENDERER_EVENTS_OUTPUT");
+
+            // Opt-in ceiling for the "unlimited" frame limiter. Unset = genuinely uncapped; set to 1000 for stock behaviour.
+            if (int.TryParse(Environment.GetEnvironmentVariable("OSU_MAX_SANE_HZ"), out int maxSaneHz) && maxSaneHz > 0)
+                MaximumSaneFps = maxSaneHz;
 
             if (DebugUtils.IsDebugBuild)
                 AllowInsecureRequests = parseBool(Environment.GetEnvironmentVariable("OSU_INSECURE_REQUESTS")) ?? false;

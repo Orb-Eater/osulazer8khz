@@ -12,6 +12,9 @@ namespace osu.Framework.Threading
         public InputThread()
             : base(name: "Input")
         {
+            // This thread now targets sub-millisecond periods (OSU_INPUT_HZ defaults to 8000 = 0.125ms),
+            // which no kernel timer can resolve. Spin out the tail of every throttled wait instead.
+            Clock.SpinWaitThreshold = 0.5;
         }
 
         internal override IEnumerable<StatisticsCounterType> StatisticsCounters => new[]
@@ -29,6 +32,34 @@ namespace osu.Framework.Threading
             // Intentionally inhibiting the base implementation which spawns a native thread.
             // Therefore, we need to run Initialize inline.
             Initialize(true);
+
+            if (!rateLoggingAttached)
+            {
+                rateLoggingAttached = true;
+                OnNewFrame += logInputRate;
+            }
+        }
+
+        private bool rateLoggingAttached;
+        private readonly System.Diagnostics.Stopwatch rateStopwatch = System.Diagnostics.Stopwatch.StartNew();
+        private long framesSinceLastReport;
+
+        private void logInputRate()
+        {
+            framesSinceLastReport++;
+
+            double elapsedMs = rateStopwatch.Elapsed.TotalMilliseconds;
+
+            if (elapsedMs < 5000)
+                return;
+
+            string target = Clock.MaximumUpdateHz > 0 ? $"{Clock.MaximumUpdateHz:N0} Hz" : "uncapped";
+
+            osu.Framework.Logging.Logger.Log(
+                $"[input] {framesSinceLastReport * 1000.0 / elapsedMs:N0} Hz effective, mean loop period {elapsedMs / framesSinceLastReport:N4} ms (target {target})");
+
+            framesSinceLastReport = 0;
+            rateStopwatch.Restart();
         }
 
         public override bool IsCurrent => ThreadSafety.IsInputThread;

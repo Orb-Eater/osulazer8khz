@@ -502,7 +502,7 @@ namespace osu.Framework.Platform
             if (Window.WindowState == WindowState.Minimised)
                 return;
 
-            Renderer.AllowTearing = windowMode.Value == WindowMode.Fullscreen;
+            Renderer.AllowTearing = FrameworkEnvironment.MaximumSaneFps == null || windowMode.Value == WindowMode.Fullscreen;
 
             TripleBuffer<DrawNode>.Buffer buffer;
 
@@ -1317,8 +1317,12 @@ namespace osu.Framework.Platform
         ///
         /// We limit things to the same rate we poll input at, to keep both gamers and their systems happy
         /// and (more) stutter-free.
+        ///
+        /// LOCAL CHANGE: the above is now opt-in. This value is <see cref="int.MaxValue"/> (i.e. no limit at all)
+        /// unless the OSU_MAX_SANE_HZ environment variable is set, in which case that value is used instead.
+        /// Set OSU_MAX_SANE_HZ=1000 to restore upstream behaviour exactly.
         /// </summary>
-        private const int maximum_sane_fps = GameThread.DEFAULT_ACTIVE_HZ;
+        private static readonly int maximum_sane_fps = FrameworkEnvironment.MaximumSaneFps ?? int.MaxValue;
 
         private void updateFrameSyncMode()
         {

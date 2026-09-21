@@ -21,7 +21,7 @@ namespace osu.Framework.Configuration
         [Description("8x refresh rate")]
         Limit8x,
 
-        [Description("Basically unlimited")]
+        [Description("Unlimited")]
         Unlimited,
     }
 }
