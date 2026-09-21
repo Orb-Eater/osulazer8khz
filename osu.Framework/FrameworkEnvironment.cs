@@ -31,6 +31,14 @@ namespace osu.Framework
         public static int? MaximumSaneFps { get; }
 
         /// <summary>
+        /// Whether consecutive relative mouse motions arriving within one update frame are merged into a
+        /// single event, from the OSU_COALESCE_MOUSE environment variable. Defaults to enabled.
+        /// Each un-merged motion costs a full positional input queue rebuild plus a hover diff, so at
+        /// 4000Hz/8000Hz polling this is the dominant cost in the input path. Set OSU_COALESCE_MOUSE=0 to disable.
+        /// </summary>
+        public static bool CoalesceMouseMotion { get; }
+
+        /// <summary>
         /// The target rate (in Hz) for the input thread / SDL event pump, from the <c>OSU_INPUT_HZ</c> environment variable.
         /// Unset defaults to 8000. A value of <c>0</c> means uncapped: the clock spins without ever sleeping.
         /// </summary>
@@ -66,6 +74,9 @@ namespace osu.Framework
             NoStructuredBuffers = parseBool(Environment.GetEnvironmentVariable("OSU_GRAPHICS_NO_SSBO")) ?? false;
 
             DeferredRendererEventsOutputPath = Environment.GetEnvironmentVariable("DEFERRED_RENDERER_EVENTS_OUTPUT");
+
+            // Merge consecutive relative mouse motions per update frame. On by default; OSU_COALESCE_MOUSE=0 disables.
+            CoalesceMouseMotion = parseBool(Environment.GetEnvironmentVariable("OSU_COALESCE_MOUSE")) ?? true;
 
             // Opt-in ceiling for the "unlimited" frame limiter. Unset = genuinely uncapped; set to 1000 for stock behaviour.
             if (int.TryParse(Environment.GetEnvironmentVariable("OSU_MAX_SANE_HZ"), out int maxSaneHz) && maxSaneHz > 0)

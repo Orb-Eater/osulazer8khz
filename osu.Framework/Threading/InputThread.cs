@@ -48,6 +48,11 @@ namespace osu.Framework.Threading
         {
             framesSinceLastReport++;
 
+            // Reading the stopwatch is a QPC call. On an uncapped input thread this runs tens of thousands
+            // of times a second on the hottest loop in the process, so only consult the clock periodically.
+            if ((framesSinceLastReport & 255) != 0)
+                return;
+
             double elapsedMs = rateStopwatch.Elapsed.TotalMilliseconds;
 
             if (elapsedMs < 5000)

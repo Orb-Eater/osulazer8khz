@@ -583,6 +583,24 @@ namespace osu.Framework.Input
                         }
                     }
 
+                    // At 4000Hz/8000Hz polling, every relative motion event drives a full positional input
+                    // queue rebuild (a whole-scene-graph hit test) plus an O(n^2) hover diff inside
+                    // HandleMousePositionChange. Merge consecutive relative motions landing in the same update
+                    // frame into one. Buttons, keys, scrolls and absolute positions are never merged and act as
+                    // barriers, so press instants and click positions stay exact. This is self-balancing: when
+                    // the update thread outruns the mouse there is nothing to merge and it costs one type check.
+                    //
+                    // Exact type identity is required. MousePositionRelativeInputFromPen derives from
+                    // MousePositionRelativeInput and must never be merged with, or into, plain mouse motion.
+                    if (FrameworkEnvironment.CoalesceMouseMotion
+                        && i.GetType() == typeof(MousePositionRelativeInput)
+                        && inputs.Count > 0
+                        && inputs[^1].GetType() == typeof(MousePositionRelativeInput))
+                    {
+                        ((MousePositionRelativeInput)inputs[^1]).Delta += ((MousePositionRelativeInput)i).Delta;
+                        continue;
+                    }
+
                     inputs.Add(i);
                 }
 
