@@ -3,7 +3,10 @@
 
 #nullable disable
 
+using JetBrains.Annotations;
 using osu.Framework.Allocation;
+using osu.Framework.Bindables;
+using osu.Game.Rulesets.Osu.Configuration;
 using osu.Framework.Graphics;
 using osu.Game.Rulesets.Objects.Drawables;
 using osuTK;
@@ -34,9 +37,13 @@ namespace osu.Game.Rulesets.Osu.Objects.Drawables
         {
         }
 
+        private readonly Bindable<bool> instantFadeOut = new Bindable<bool>();
+
         [BackgroundDependencyLoader]
-        private void load()
+        private void load([CanBeNull] OsuRulesetConfigManager osuConfig)
         {
+            osuConfig?.BindWith(OsuRulesetSetting.InstantFadeOut, instantFadeOut);
+
             Size = OsuHitObject.OBJECT_DIMENSIONS;
             Origin = Anchor.Centre;
 
@@ -92,8 +99,14 @@ namespace osu.Game.Rulesets.Osu.Objects.Drawables
                     break;
 
                 case ArmedState.Hit:
-                    this.FadeOut(ANIM_DURATION, Easing.OutQuint);
-                    this.ScaleTo(Scale * 1.5f, ANIM_DURATION, Easing.Out);
+                    if (instantFadeOut.Value)
+                        this.FadeOut();
+                    else
+                    {
+                        this.FadeOut(ANIM_DURATION, Easing.OutQuint);
+                        this.ScaleTo(Scale * 1.5f, ANIM_DURATION, Easing.Out);
+                    }
+
                     break;
             }
         }

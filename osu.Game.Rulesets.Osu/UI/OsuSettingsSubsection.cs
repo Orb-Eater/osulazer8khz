@@ -47,6 +47,12 @@ namespace osu.Game.Rulesets.Osu.UI
                 }),
                 new SettingsItemV2(new FormCheckBox
                 {
+                    Caption = "Instant fade out",
+                    HintText = "Hit objects vanish the instant they are hit, with no fade-out at all (\"instafade\"). Applies to circles, sliders, slider ticks and repeats. Missed objects still fade so misses stay readable.",
+                    Current = config.GetBindable<bool>(OsuRulesetSetting.InstantFadeOut)
+                }),
+                new SettingsItemV2(new FormCheckBox
+                {
                     Caption = RulesetSettingsStrings.CursorTrail,
                     Current = config.GetBindable<bool>(OsuRulesetSetting.ShowCursorTrail)
                 }),
