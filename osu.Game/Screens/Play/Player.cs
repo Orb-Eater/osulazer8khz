@@ -200,6 +200,22 @@ namespace osu.Game.Screens.Play
         protected override IReadOnlyDependencyContainer CreateChildDependencies(IReadOnlyDependencyContainer parent)
             => dependencies = new DependencyContainer(base.CreateChildDependencies(parent));
 
+        private double? firstObjectStartTime;
+
+        protected override void Update()
+        {
+            base.Update();
+
+            // Only ever true while OSU_FRAME_STATS is recording a session and the marker has not been set yet.
+            if (osu.Framework.Platform.FrameStats.AwaitingFirstObject && LoadedBeatmapSuccessfully && DrawableRuleset != null && GameplayClockContainer != null)
+            {
+                firstObjectStartTime ??= DrawableRuleset.Objects.FirstOrDefault()?.StartTime ?? double.MaxValue;
+
+                if (GameplayClockContainer.CurrentTime >= firstObjectStartTime.Value)
+                    osu.Framework.Platform.FrameStats.MarkFirstObject();
+            }
+        }
+
         protected override void LoadComplete()
         {
             base.LoadComplete();
