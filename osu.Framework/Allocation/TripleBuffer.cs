@@ -64,6 +64,10 @@ namespace osu.Framework.Allocation
 
                 if (timeout == 0 || stopwatch.ElapsedMilliseconds > timeout)
                     return null;
+
+                // Eases the Interlocked.Exchange above hammering the cache line the writer is using.
+                if (FrameworkEnvironment.SpinPause)
+                    Thread.SpinWait(4);
             }
 
             Buffer usage = buffers[readIndex];

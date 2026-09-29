@@ -461,9 +461,13 @@ namespace osu.Framework.Platform
 
         private ulong frameCount;
 
+        private readonly FrameSpikeLog spikeLog = FrameworkEnvironment.SpikeLogMs > 0 ? new FrameSpikeLog(FrameworkEnvironment.SpikeLogMs) : null;
+
         protected virtual void UpdateFrame()
         {
             if (Root == null) return;
+
+            spikeLog?.UpdateStarted(IsActive.Value);
 
             frameCount++;
 
@@ -511,11 +515,21 @@ namespace osu.Framework.Platform
                 // Importantly, only wait on renderer frame availability if we actually rendered a frame since the last `WaitUntilNextFrameReady()`.
                 // Without this, the wait handle, internally used in the Veldrid-side implementation of `WaitUntilNextFrameReady()`,
                 // will potentially be in a bad state and take the timeout value (1 second) to recover.
+                long t0 = spikeLog != null ? FrameSpikeLog.Now : 0;
+
                 if (didRenderFrame)
                     Renderer.WaitUntilNextFrameReady();
 
+                long t1 = spikeLog != null ? FrameSpikeLog.Now : 0;
+
                 didRenderFrame = false;
                 buffer = drawRoots.GetForRead(IsActive.Value ? TripleBuffer<DrawNode>.DEFAULT_READ_TIMEOUT : 0);
+
+                if (spikeLog != null)
+                {
+                    spikeLog.AddWait(t1 - t0);
+                    spikeLog.AddRead(FrameSpikeLog.Now - t1, buffer != null);
+                }
             }
 
             if (buffer == null)
@@ -525,6 +539,8 @@ namespace osu.Framework.Platform
 
             try
             {
+                long drawStart = spikeLog != null ? FrameSpikeLog.Now : 0;
+
                 using (drawMonitor.BeginCollecting(PerformanceCollectionType.DrawReset))
                     Renderer.BeginFrame(new Vector2(Window.ClientSize.Width, Window.ClientSize.Height));
 
@@ -557,8 +573,18 @@ namespace osu.Framework.Platform
 
                 Renderer.FinishFrame();
 
+                long swapStart = spikeLog != null ? FrameSpikeLog.Now : 0;
+
                 using (drawMonitor.BeginCollecting(PerformanceCollectionType.SwapBuffer))
                     Swap();
+
+                if (spikeLog != null)
+                {
+                    long swapEnd = FrameSpikeLog.Now;
+                    spikeLog.AddDraw(swapStart - drawStart);
+                    spikeLog.AddSwap(swapEnd - swapStart);
+                    spikeLog.Presented(IsActive.Value, Window.WindowState);
+                }
 
                 Window.OnDraw();
                 didRenderFrame = true;

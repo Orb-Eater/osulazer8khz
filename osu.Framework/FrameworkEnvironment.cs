@@ -2,6 +2,7 @@
 // See the LICENCE file in the repository root for full licence text.
 
 using System;
+using System.Globalization;
 using osu.Framework.Development;
 using osu.Framework.Platform;
 
@@ -45,6 +46,19 @@ namespace osu.Framework
         public static double InputHz { get; }
 
         /// <summary>
+        /// Frame-spike logging threshold (in ms), from the <c>OSU_SPIKE_LOG_MS</c> environment variable.
+        /// Unset or <c>0</c> disables it. When set, every gap between presented frames longer than this is logged
+        /// with a breakdown of where the draw thread spent the time, plus any update-thread stall and GC activity.
+        /// </summary>
+        public static double SpikeLogMs { get; }
+
+        /// <summary>
+        /// Whether the draw thread's busy-wait for a new update frame issues a CPU pause hint each iteration,
+        /// from the <c>OSU_SPIN_PAUSE</c> environment variable. Defaults to disabled (upstream behaviour).
+        /// </summary>
+        public static bool SpinPause { get; }
+
+        /// <summary>
         /// Whether non-SSL requests should be allowed. Debug only. Defaults to disabled.
         /// When disabled, http:// requests will be automatically converted to https://.
         /// </summary>
@@ -81,6 +95,10 @@ namespace osu.Framework
             // Opt-in ceiling for the "unlimited" frame limiter. Unset = genuinely uncapped; set to 1000 for stock behaviour.
             if (int.TryParse(Environment.GetEnvironmentVariable("OSU_MAX_SANE_HZ"), out int maxSaneHz) && maxSaneHz > 0)
                 MaximumSaneFps = maxSaneHz;
+
+            // Frame-spike diagnostics and the draw-thread spin hint. Both off by default.
+            SpikeLogMs = double.TryParse(Environment.GetEnvironmentVariable("OSU_SPIKE_LOG_MS"), NumberStyles.Float, CultureInfo.InvariantCulture, out double spikeMs) && spikeMs > 0 ? spikeMs : 0;
+            SpinPause = parseBool(Environment.GetEnvironmentVariable("OSU_SPIN_PAUSE")) ?? false;
 
             if (DebugUtils.IsDebugBuild)
                 AllowInsecureRequests = parseBool(Environment.GetEnvironmentVariable("OSU_INSECURE_REQUESTS")) ?? false;
