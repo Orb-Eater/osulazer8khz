@@ -66,6 +66,25 @@ namespace osu.Framework
         public static bool SpinPause { get; }
 
         /// <summary>
+        /// The GC latency mode used during gameplay, from the <c>OSU_GC_MODE</c> environment variable:
+        /// <c>LowLatency</c> (the default, upstream behaviour), <c>Batch</c>, <c>Interactive</c>, <c>SustainedLowLatency</c>,
+        /// or <c>Keep</c> (do not change the mode at all). Unset or unrecognised values give the default.
+        /// </summary>
+        public static string GCMode { get; } = "LowLatency";
+
+        /// <summary>
+        /// The generation collected when a gameplay session starts, from <c>OSU_GC_COLLECT_AT_START</c>:
+        /// <c>0</c>, <c>1</c> or <c>2</c>, or <c>-1</c> for no collection. Defaults to <c>0</c> (upstream behaviour).
+        /// </summary>
+        public static int GCCollectAtStart { get; } = 0;
+
+        /// <summary>
+        /// Size in megabytes of a no-GC region entered for each gameplay session (and re-entered when its budget runs out),
+        /// from <c>OSU_NOGC_MB</c>. Unset or <c>0</c> disables it (upstream behaviour).
+        /// </summary>
+        public static int NoGCMegabytes { get; }
+
+        /// <summary>
         /// Whether non-SSL requests should be allowed. Debug only. Defaults to disabled.
         /// When disabled, http:// requests will be automatically converted to https://.
         /// </summary>
@@ -107,6 +126,20 @@ namespace osu.Framework
             SpikeLogMs = double.TryParse(Environment.GetEnvironmentVariable("OSU_SPIKE_LOG_MS"), NumberStyles.Float, CultureInfo.InvariantCulture, out double spikeMs) && spikeMs > 0 ? spikeMs : 0;
             FrameStats = parseBool(Environment.GetEnvironmentVariable("OSU_FRAME_STATS")) ?? false;
             SpinPause = parseBool(Environment.GetEnvironmentVariable("OSU_SPIN_PAUSE")) ?? false;
+
+            // Gameplay GC behaviour. All default to upstream behaviour.
+            string? gcMode = Environment.GetEnvironmentVariable("OSU_GC_MODE");
+
+            foreach (string known in new[] { "LowLatency", "Batch", "Interactive", "SustainedLowLatency", "Keep" })
+            {
+                if (string.Equals(gcMode?.Trim(), known, StringComparison.OrdinalIgnoreCase))
+                    GCMode = known;
+            }
+
+            if (int.TryParse(Environment.GetEnvironmentVariable("OSU_GC_COLLECT_AT_START"), NumberStyles.Integer, CultureInfo.InvariantCulture, out int collectAt) && collectAt >= -1 && collectAt <= 2)
+                GCCollectAtStart = collectAt;
+
+            NoGCMegabytes = int.TryParse(Environment.GetEnvironmentVariable("OSU_NOGC_MB"), NumberStyles.Integer, CultureInfo.InvariantCulture, out int noGcMb) && noGcMb > 0 ? noGcMb : 0;
 
             if (DebugUtils.IsDebugBuild)
                 AllowInsecureRequests = parseBool(Environment.GetEnvironmentVariable("OSU_INSECURE_REQUESTS")) ?? false;

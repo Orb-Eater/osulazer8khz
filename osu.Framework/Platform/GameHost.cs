@@ -475,6 +475,9 @@ namespace osu.Framework.Platform
             if (FrameStats.Enabled)
                 FrameStats.UpdateStarted();
 
+            if (GCSession.NoGCActive)
+                GCSession.Tick();
+
             frameCount++;
 
             if (Window == null)

@@ -2,6 +2,7 @@
 // See the LICENCE file in the repository root for full licence text.
 
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
 using System.IO;
@@ -79,6 +80,10 @@ namespace osu.Framework.Platform
         private static readonly uint[]? secGen1 = enabled ? new uint[second_capacity] : null;
         private static readonly uint[]? secGen2 = enabled ? new uint[second_capacity] : null;
 
+        // Gen0 size just before / after the most recent GC at the time of each sample (GC.GetGCMemoryInfo). Only in the .txt.
+        private static readonly ulong[]? secGen0Before = enabled ? new ulong[second_capacity] : null;
+        private static readonly ulong[]? secGen0After = enabled ? new ulong[second_capacity] : null;
+
         private static readonly double ticksToMs = 1000.0 / Stopwatch.Frequency;
 
         // Written by the update thread (Begin/End), read by the draw thread.
@@ -117,6 +122,11 @@ namespace osu.Framework.Platform
         private static TimeSpan lastPause;
         private static int lastGen0, lastGen1, lastGen2;
 
+        // GC reasons: the session's GC count at Begin/End (update thread), and the formatted result (finishing task).
+        private static int beginGcCount, endGcCount;
+        private static string gcReasonsLine = string.Empty;
+        private static string gen0SizeLine = string.Empty;
+
         /// <summary>
         /// The storage the raw files are written to. Set by <see cref="GameHost"/>; falls back to the user's application data folder.
         /// </summary>
@@ -148,6 +158,9 @@ namespace osu.Framework.Platform
             Volatile.Write(ref firstObjectFrame, -1);
             Volatile.Write(ref firstObjectUpdate, -1);
 
+            beginGcCount = GC.CollectionCount(0);
+            GCReasonListener.Begin();
+
             Interlocked.Increment(ref session);
             recording = true;
         }
@@ -164,6 +177,8 @@ namespace osu.Framework.Platform
 
             open = false;
             recording = false;
+            endGcCount = GC.CollectionCount(0);
+            GCReasonListener.MarkEnd();
             Interlocked.MemoryBarrier();
 
             Task.Run(finish);
@@ -244,6 +259,14 @@ namespace osu.Framework.Platform
             secGen0![i] = (uint)(g0 - lastGen0);
             secGen1![i] = (uint)(g1 - lastGen1);
             secGen2![i] = (uint)(g2 - lastGen2);
+
+            var info = GC.GetGCMemoryInfo(GCKind.Any);
+
+            if (info.GenerationInfo.Length > 0)
+            {
+                secGen0Before![i] = (ulong)info.GenerationInfo[0].SizeBeforeBytes;
+                secGen0After![i] = (ulong)info.GenerationInfo[0].SizeAfterBytes;
+            }
 
             lastAlloc = alloc;
             lastPause = pause;
@@ -336,6 +359,11 @@ namespace osu.Framework.Platform
                 while (Volatile.Read(ref inRecord) != 0)
                     spin.SpinOnce();
 
+                // The runtime hands GC events to the listener with a short delay; give it time to deliver the last ones before counting.
+                Thread.Sleep(300);
+                gcReasonsLine = "[framestats] " + GCReasonListener.Finish(endGcCount - beginGcCount);
+                gen0SizeLine = gen0Summary();
+
                 int n = seenSession == Volatile.Read(ref session) ? count : 0;
 
                 if (n == 0)
@@ -349,6 +377,8 @@ namespace osu.Framework.Platform
 
                 string line = summarise(n, firstFrame, full);
                 Logger.Log(line);
+                Logger.Log(gcReasonsLine);
+                Logger.Log(gen0SizeLine);
                 write(n, firstFrame, line);
             }
             catch (Exception e)
@@ -407,6 +437,25 @@ namespace osu.Framework.Platform
                 line += " (buffer full, recording stopped early)";
 
             return line;
+        }
+
+        private static string gen0Summary()
+        {
+            var c = CultureInfo.InvariantCulture;
+            int n = secCount;
+            var sizes = new List<ulong>();
+
+            for (int i = 0; i < n; i++)
+            {
+                if (secGen0Before![i] > 0)
+                    sizes.Add(secGen0Before[i]);
+            }
+
+            if (sizes.Count == 0)
+                return "[framestats] gen0 size before GC: no samples";
+
+            sizes.Sort();
+            return string.Create(c, $"[framestats] gen0 size before the most recent GC, sampled per second: median {sizes[sizes.Count / 2] / 1024.0:F0} KB, min {sizes[0] / 1024.0:F0} KB, max {sizes[^1] / 1024.0:F0} KB ({sizes.Count} samples)");
         }
 
         private static double low(float[] worstFirst, double fraction)
@@ -491,10 +540,12 @@ namespace osu.Framework.Platform
         {
             var c = CultureInfo.InvariantCulture;
             w.WriteLine(line);
-            w.WriteLine("per second (deltas): elapsed_s alloc_MB gc_pause_ms gen0 gen1 gen2");
+            w.WriteLine(gcReasonsLine);
+            w.WriteLine(gen0SizeLine);
+            w.WriteLine("per second (deltas): elapsed_s alloc_MB gc_pause_ms gen0 gen1 gen2 gen0_before_KB gen0_after_KB");
 
             for (int i = 0; i < secCount; i++)
-                w.WriteLine(string.Create(c, $"{secElapsed![i]:F2} {secAlloc![i] / 1048576.0:F2} {secPause![i]:F2} {secGen0![i]} {secGen1![i]} {secGen2![i]}"));
+                w.WriteLine(string.Create(c, $"{secElapsed![i]:F2} {secAlloc![i] / 1048576.0:F2} {secPause![i]:F2} {secGen0![i]} {secGen1![i]} {secGen2![i]} {secGen0Before![i] / 1024.0:F0} {secGen0After![i] / 1024.0:F0}"));
         }
     }
 }
