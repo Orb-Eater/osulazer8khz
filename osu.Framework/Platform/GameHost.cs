@@ -463,11 +463,17 @@ namespace osu.Framework.Platform
 
         private readonly FrameSpikeLog spikeLog = FrameworkEnvironment.SpikeLogMs > 0 ? new FrameSpikeLog(FrameworkEnvironment.SpikeLogMs) : null;
 
+        // Whether the draw thread takes per-phase timestamps (spike logger and/or frame stats).
+        private readonly bool frameTiming = FrameworkEnvironment.SpikeLogMs > 0 || FrameworkEnvironment.FrameStats;
+
         protected virtual void UpdateFrame()
         {
             if (Root == null) return;
 
             spikeLog?.UpdateStarted(IsActive.Value);
+
+            if (FrameStats.Enabled)
+                FrameStats.UpdateStarted();
 
             frameCount++;
 
@@ -509,27 +515,31 @@ namespace osu.Framework.Platform
             Renderer.AllowTearing = FrameworkEnvironment.MaximumSaneFps == null || windowMode.Value == WindowMode.Fullscreen;
 
             TripleBuffer<DrawNode>.Buffer buffer;
+            long drawStart;
 
             using (drawMonitor.BeginCollecting(PerformanceCollectionType.Sleep))
             {
                 // Importantly, only wait on renderer frame availability if we actually rendered a frame since the last `WaitUntilNextFrameReady()`.
                 // Without this, the wait handle, internally used in the Veldrid-side implementation of `WaitUntilNextFrameReady()`,
                 // will potentially be in a bad state and take the timeout value (1 second) to recover.
-                long t0 = spikeLog != null ? FrameSpikeLog.Now : 0;
+                long t0 = frameTiming ? FrameSpikeLog.Now : 0;
 
                 if (didRenderFrame)
                     Renderer.WaitUntilNextFrameReady();
 
-                long t1 = spikeLog != null ? FrameSpikeLog.Now : 0;
+                long t1 = frameTiming ? FrameSpikeLog.Now : 0;
 
                 didRenderFrame = false;
                 buffer = drawRoots.GetForRead(IsActive.Value ? TripleBuffer<DrawNode>.DEFAULT_READ_TIMEOUT : 0);
 
-                if (spikeLog != null)
-                {
-                    spikeLog.AddWait(t1 - t0);
-                    spikeLog.AddRead(FrameSpikeLog.Now - t1, buffer != null);
-                }
+                // Doubles as the start of the draw phase.
+                drawStart = frameTiming ? FrameSpikeLog.Now : 0;
+
+                spikeLog?.AddWait(t1 - t0);
+                spikeLog?.AddRead(drawStart - t1, buffer != null);
+
+                if (FrameStats.Enabled)
+                    FrameStats.AddWaits(t1 - t0, drawStart - t1);
             }
 
             if (buffer == null)
@@ -539,8 +549,6 @@ namespace osu.Framework.Platform
 
             try
             {
-                long drawStart = spikeLog != null ? FrameSpikeLog.Now : 0;
-
                 using (drawMonitor.BeginCollecting(PerformanceCollectionType.DrawReset))
                     Renderer.BeginFrame(new Vector2(Window.ClientSize.Width, Window.ClientSize.Height));
 
@@ -573,20 +581,24 @@ namespace osu.Framework.Platform
 
                 Renderer.FinishFrame();
 
-                long swapStart = spikeLog != null ? FrameSpikeLog.Now : 0;
+                long swapStart = frameTiming ? FrameSpikeLog.Now : 0;
 
                 using (drawMonitor.BeginCollecting(PerformanceCollectionType.SwapBuffer))
                     Swap();
 
-                if (FrameStats.Enabled)
-                    FrameStats.Presented();
-
-                if (spikeLog != null)
+                if (frameTiming)
                 {
                     long swapEnd = FrameSpikeLog.Now;
-                    spikeLog.AddDraw(swapStart - drawStart);
-                    spikeLog.AddSwap(swapEnd - swapStart);
-                    spikeLog.Presented(IsActive.Value, Window.WindowState);
+
+                    if (FrameStats.Enabled)
+                        FrameStats.Presented(swapEnd, swapStart - drawStart, swapEnd - swapStart);
+
+                    if (spikeLog != null)
+                    {
+                        spikeLog.AddDraw(swapStart - drawStart);
+                        spikeLog.AddSwap(swapEnd - swapStart);
+                        spikeLog.Presented(IsActive.Value, Window.WindowState);
+                    }
                 }
 
                 Window.OnDraw();
