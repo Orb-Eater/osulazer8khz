@@ -1,21 +1,3 @@
-8khz support - true instafade - fps improvements after 8khz support - sub 1ms response time
-
-Direct code changes
-
-8khz support:
-
-true instafade:
-
-fps improvements after 8khz support:
-
-sub 1ms response time:
-
-
-
-
-____
-
-
 <p align="center">
   <img width="500" alt="osu! logo" src="assets/lazer.png">
 </p>
