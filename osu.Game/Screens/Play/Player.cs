@@ -29,6 +29,7 @@ using osu.Game.Online.API;
 using osu.Game.Overlays;
 using osu.Game.Rulesets;
 using osu.Game.Rulesets.Mods;
+using osu.Game.Rulesets.Objects.Types;
 using osu.Game.Rulesets.Scoring;
 using osu.Game.Rulesets.UI;
 using osu.Game.Rulesets.UI.Scrolling;
@@ -209,7 +210,11 @@ namespace osu.Game.Screens.Play
             // Only ever true while OSU_FRAME_STATS is recording a session and the marker has not been set yet.
             if (osu.Framework.Platform.FrameStats.AwaitingFirstObject && LoadedBeatmapSuccessfully && DrawableRuleset != null && GameplayClockContainer != null)
             {
-                firstObjectStartTime ??= DrawableRuleset.Objects.FirstOrDefault()?.StartTime ?? double.MaxValue;
+                // The marker is the moment the first hit object becomes visible: StartTime - TimePreempt where the ruleset's objects
+                // expose it (osu! and catch, via IHasTimePreempt); other rulesets fall back to StartTime (when the object is hit).
+                firstObjectStartTime ??= DrawableRuleset.Objects.FirstOrDefault() is { } first
+                    ? first.StartTime - ((first as IHasTimePreempt)?.TimePreempt ?? 0)
+                    : double.MaxValue;
 
                 if (GameplayClockContainer.CurrentTime >= firstObjectStartTime.Value)
                     osu.Framework.Platform.FrameStats.MarkFirstObject();
