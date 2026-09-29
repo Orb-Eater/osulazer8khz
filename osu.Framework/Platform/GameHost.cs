@@ -578,6 +578,9 @@ namespace osu.Framework.Platform
                 using (drawMonitor.BeginCollecting(PerformanceCollectionType.SwapBuffer))
                     Swap();
 
+                if (FrameStats.Enabled)
+                    FrameStats.Presented();
+
                 if (spikeLog != null)
                 {
                     long swapEnd = FrameSpikeLog.Now;
@@ -1170,6 +1173,9 @@ namespace osu.Framework.Platform
         {
             Logger.Storage = Storage.GetStorageForDirectory("logs");
             Logger.Enabled = true;
+
+            if (FrameStats.Enabled)
+                FrameStats.Storage = Storage.GetStorageForDirectory("framestats");
         }
 
         private void populateInputHandlers()

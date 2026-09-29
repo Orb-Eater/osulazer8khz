@@ -53,6 +53,13 @@ namespace osu.Framework
         public static double SpikeLogMs { get; }
 
         /// <summary>
+        /// Whether in-game frame statistics are enabled, from the <c>OSU_FRAME_STATS</c> environment variable. Defaults to disabled.
+        /// When enabled, present-to-present frame times are recorded between <see cref="Platform.FrameStats.Begin"/> and <see cref="Platform.FrameStats.End"/>
+        /// and summarised in the runtime log, with the raw times written to the <c>framestats</c> folder of the data directory.
+        /// </summary>
+        public static bool FrameStats { get; }
+
+        /// <summary>
         /// Whether the draw thread's busy-wait for a new update frame issues a CPU pause hint each iteration,
         /// from the <c>OSU_SPIN_PAUSE</c> environment variable. Defaults to disabled (upstream behaviour).
         /// </summary>
@@ -98,6 +105,7 @@ namespace osu.Framework
 
             // Frame-spike diagnostics and the draw-thread spin hint. Both off by default.
             SpikeLogMs = double.TryParse(Environment.GetEnvironmentVariable("OSU_SPIKE_LOG_MS"), NumberStyles.Float, CultureInfo.InvariantCulture, out double spikeMs) && spikeMs > 0 ? spikeMs : 0;
+            FrameStats = parseBool(Environment.GetEnvironmentVariable("OSU_FRAME_STATS")) ?? false;
             SpinPause = parseBool(Environment.GetEnvironmentVariable("OSU_SPIN_PAUSE")) ?? false;
 
             if (DebugUtils.IsDebugBuild)
