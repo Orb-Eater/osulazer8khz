@@ -324,3 +324,28 @@ what each run felt like, and whether typing (chat, song search, IME) works in 3 
 - Release build 0 warnings / 0 errors before and after. Analyser checked on synthetic v3 and v4 files only (no real file).
 - The update frame still running at session end has no publish time: its inputs show n/a in the split.
 - Round E launchers `1-`..`4-` are in `8k/launchers/`. Waiting on the owner's run.
+
+## Step E results (2026-09-30, round E: same map, runs in order; first v4 files)
+
+Five files: baseline twice (one with the overlay, one without; which is which is inferred from fps: ~2,160 = overlay on,
+2,458 = off, and runs 2-4 match the first), then launchers 2, 3, 4. From first object; ms.
+| run | avg fps | 1% low | 0.1% low | max ms | >2 ms | GCs | keys os->pump mean | keys os->present mean | pen pump->update mean / p99 | pen update->present mean / p99 / max | pen os->present mean / p99 |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| 1 baseline (overlay on) | 2,160 | 702 | 492 | 24.2 | 49 | 4,610 | 8.45 | 9.78 | 0.065 / 0.160 | 0.943 / 1.99 / 16.7 | 1.189 / 2.28 |
+| 1b baseline (overlay off) | 2,458 | 743 | 574 | 5.6 | 6 | 3,025 | 8.88 | 10.09 | 0.056 / 0.141 | 0.870 / 1.91 / 2.7 | 1.100 / 2.18 |
+| 2 Interactive | 2,160 | 701 | 481 | 13.8 | 60 | 59 | 8.38 | 9.57 | 0.067 / 0.175 | 0.952 / 1.98 / 9.4 | 1.149 / 2.22 |
+| 3 raw keyboard | 2,160 | 688 | 493 | 14.7 | 36 | 4,648 | **0.26** | **1.62** | 0.069 / 0.178 | 0.957 / 2.05 / 10.2 | 1.177 / 2.33 |
+| 4 raw + Interactive | 2,194 | 692 | 464 | 13.2 | 91 | 73 | **0.24** | **1.41** | 0.066 / 0.161 | 0.939 / 1.98 / 13.9 | 1.188 / 2.28 |
+
+- Raw keyboard works: keys os->pump 8.4-8.9 -> 0.24-0.26 ms (p99 0.5-0.7 vs 16.3), so keys now have a real OS stamp.
+  The old 8 ms is mostly the 15.6 ms stamp step, not a real delay. Real keys os->present is 1.4-1.6 ms. Typing/IME: not yet reported.
+- The tablet (pen) path is measured: os->pump 0.13-0.18 ms (real stamps, so it is the raw-mouse path, not WM_POINTER),
+  pump->update 0.06-0.07, update->present 0.87-0.96, os->present mean 1.1-1.2, p99 2.2-2.3. Identical in all modes.
+- Interactive cuts GCs 4,610 -> 59-73 but does not move 1% low, 0.1% low or the delays now (Step D showed a gain; not reproduced).
+- Overlay off: +300 fps, update->present -0.07, max 5.6 ms instead of 13-24 (first-object max in runs 1-4 is one ~14 ms stall
+  on the update thread; it shows as pen update(consume->publish) max 13-16 ms).
+- E3 split (pen move, mean): update(consume->publish) 0.14, queue(publish->draw start) 0.33, draw+swap 0.47-0.49. Frame age at present 0.65.
+  Queue is the largest controllable part, consistent with candidate P1, but P1's estimated gain is 0.03-0.05 ms. Not built.
+- **Anomaly:** avg fps ~2,160 (2,458 overlay off) and 1% low ~700, against ~5,900 / 1,500-2,200 in Step D. Draw+swap is ~0.48 ms
+  against ~0.16 before. Same map, settings and display as round D is unconfirmed; a regression in the Step E build is not ruled out.
+- What the user felt: all runs felt bad.
