@@ -327,8 +327,8 @@ what each run felt like, and whether typing (chat, song search, IME) works in 3 
 
 ## Step E results (2026-09-30, round E: same map, runs in order; first v4 files)
 
-Five files: baseline twice (one with the overlay, one without; which is which is inferred from fps: ~2,160 = overlay on,
-2,458 = off, and runs 2-4 match the first), then launchers 2, 3, 4. From first object; ms.
+Five files: baseline twice (first file overlay on, second overlay off; confirmed by the owner, matches fps ~2,160 vs 2,458;
+the owner's first message named the wrong file and was replaced by the second), then launchers 2, 3, 4, all on the same map. From first object; ms.
 | run | avg fps | 1% low | 0.1% low | max ms | >2 ms | GCs | keys os->pump mean | keys os->present mean | pen pump->update mean / p99 | pen update->present mean / p99 / max | pen os->present mean / p99 |
 |---|---|---|---|---|---|---|---|---|---|---|---|
 | 1 baseline (overlay on) | 2,160 | 702 | 492 | 24.2 | 49 | 4,610 | 8.45 | 9.78 | 0.065 / 0.160 | 0.943 / 1.99 / 16.7 | 1.189 / 2.28 |
@@ -348,4 +348,5 @@ Five files: baseline twice (one with the overlay, one without; which is which is
   Queue is the largest controllable part, consistent with candidate P1, but P1's estimated gain is 0.03-0.05 ms. Not built.
 - **Anomaly:** avg fps ~2,160 (2,458 overlay off) and 1% low ~700, against ~5,900 / 1,500-2,200 in Step D. Draw+swap is ~0.48 ms
   against ~0.16 before. Same map, settings and display as round D is unconfirmed; a regression in the Step E build is not ruled out.
-- What the user felt: all runs felt bad.
+- What the user felt: all runs felt bad. Baseline felt like circles should have been hit that were not; for runs 2-4 the owner
+  cannot say, because they may have adapted their play to the baseline. Typing/IME in 3 and 4 not tried.
