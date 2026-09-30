@@ -410,3 +410,18 @@ From first object; delays in ms. Pen = the tablet cursor path.
    state each run was in. Proposed (needs the owner's yes, not in "Agreed next steps"): write one `[config]` line at the start of
    the recorder's output with the active `OSU_*` variables, the game and framework commit, and the renderer, window mode and
    size, so every file identifies itself.
+
+## Plan Step G (2026-09-30, owner said yes): a `[config]` line so every recorder file identifies itself
+Why: the same config gave ~2,160 fps in round E and ~6,070 in round F, and round F's files could only be matched to launchers by
+inference. What (only under `OSU_FRAME_STATS`, at session start, not per frame, nothing when off): one `[config]` line, logged
+before the `[framestats]` line and written as the first line of the `.txt`, with
+- the `OSU_*` variables that are set (a fixed list of the names in `FrameworkEnvironment`/`HighPerformanceSessionManager`; values only for those)
+  and the `DOTNET_GC*` / `DOTNET_TC*` / `DOTNET_TieredPGO` / `DOTNET_ReadyToRun` ones that are set (never other `DOTNET_*`, they hold paths);
+- the game and framework build id (`AssemblyInformationalVersion`, i.e. the commit), .NET version, core count, server GC on/off;
+- renderer actually used, window mode, frame-sync mode, client size, refresh rate of the current display mode.
+No paths, names, adapter or machine names. The `.bin` format is unchanged (the line is in the log and `.txt` only).
+Measured by: a run's first lines say which launcher config it was. The next round (two runs of the same launcher in a row, then a
+third after a restart) then shows whether the config differs when fps differs. No launcher changes behaviour; `1-test`/`2-test` stay.
+
+Runtime log of the real `1-test` run (uploaded by the owner, then removed from the tree because it held a user folder path and
+beatmap names; it stays in git history): display mode 1920x1080@540, fullscreen, Direct3D 11. Nothing in it explains the fps difference.
