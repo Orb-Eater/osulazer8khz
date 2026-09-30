@@ -1,0 +1,34 @@
+// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
+// See the LICENCE file in the repository root for full licence text.
+
+using osu.Framework.Graphics.Shaders;
+
+namespace osu.Framework.Graphics.Rendering.Dummy
+{
+    /// <summary>
+    /// An <see cref="IShader"/> that does nothing. May be used for tests that don't have a visual output.
+    /// </summary>
+    internal class DummyShader : IShader
+    {
+        public void Bind()
+        {
+            IsBound = true;
+        }
+
+        public void Unbind()
+        {
+            IsBound = false;
+        }
+
+        public bool IsLoaded => true;
+        public bool IsBound { get; private set; }
+
+        public void BindUniformBlock(string blockName, IUniformBuffer buffer)
+        {
+        }
+
+        public void Dispose()
+        {
+        }
+    }
+}

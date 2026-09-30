@@ -1,0 +1,30 @@
+<Project>
+  <!-- Some transitive assemblies don't behave well with AOT, so we strip them.
+       Importantly, this is done in such a way that the assembly's MVID is preserved to satisfy runtime requirements. -->
+  <Target Name="OsuFrameworkIOSStripAssemblies" AfterTargets="ILLink" BeforeTargets="_AOTCompile">
+    <PropertyGroup>
+      <AssemblyStripper>$(MSBuildThisFileDirectory)tools\AssemblyStripper.cs</AssemblyStripper>
+      <LinkedOutputFolder>$(IntermediateOutputPath)linked\</LinkedOutputFolder>
+    </PropertyGroup>
+    <ItemGroup>
+      <AssembliesToStrip Include="SharpGen.Runtime.dll"/>
+      <AssembliesToStrip Include="SharpGen.Runtime.COM.dll"/>
+      <AssembliesToStrip Include="Vortice.D3DCompiler.dll"/>
+      <AssembliesToStrip Include="Vortice.Direct3D11.dll"/>
+      <AssembliesToStrip Include="Vortice.DirectX.dll"/>
+      <AssembliesToStrip Include="Vortice.DXGI.dll"/>
+    </ItemGroup>
+    <Exec WorkingDirectory="$(LinkedOutputFolder)" Command="dotnet &quot;$(AssemblyStripper)&quot; -- @(AssembliesToStrip, ' ')"/>
+  </Target>
+
+  <!-- OpenTabletDriver contains P/Invokes to the "Quartz" framework for native macOS code.
+       This leads iOS linker into attempting to include that framework, despite not existing on such platform.
+       See: https://github.com/OpenTabletDriver/OpenTabletDriver/issues/2524 / https://github.com/xamarin/xamarin-macios/issues/15118#issuecomment-1141893683 -->
+  <!-- There's also P/Invokes for "ApplicationServices" framework somewhere in the referenced libraries... -->
+  <Target Name="OsuFrameworkIOSRemoveMacOSFrameworks" BeforeTargets="_ComputeLinkNativeExecutableInputs" AfterTargets="_LoadLinkerOutput">
+    <ItemGroup>
+      <_LinkerFrameworks Remove="Quartz"/>
+      <_LinkerFrameworks Remove="ApplicationServices"/>
+    </ItemGroup>
+  </Target>
+</Project>

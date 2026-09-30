@@ -1,0 +1,56 @@
+﻿<!-- Contains required properties for osu!framework projects. -->
+<Project>
+  <PropertyGroup Label="C#">
+    <LangVersion>14.0</LangVersion>
+    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+  <PropertyGroup Label="Documentation">
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
+  </PropertyGroup>
+  <ItemGroup Label="License">
+    <None Include="$(MSBuildThisFileDirectory)osu-framework.licenseheader">
+      <Link>osu-framework.licenseheader</Link>
+    </None>
+  </ItemGroup>
+  <ItemGroup Label="Resources">
+    <EmbeddedResource Include="Resources\**\*.*" />
+  </ItemGroup>
+  <ItemGroup Label="Icon">
+    <None Include="$(MSBuildThisFileDirectory)assets\nupkg icon.png">
+      <Pack>True</Pack>
+      <PackagePath>icon.png</PackagePath>
+    </None>
+  </ItemGroup>
+  <ItemGroup Label="Code Analysis">
+    <PackageReference Include="Microsoft.CodeAnalysis.BannedApiAnalyzers" Version="3.3.3" PrivateAssets="All" />
+    <AdditionalFiles Include="$(MSBuildThisFileDirectory)CodeAnalysis\BannedSymbols.txt" />
+    <!-- Rider compatibility: .globalconfig needs to be explicitly referenced instead of using the global file name. -->
+    <GlobalAnalyzerConfigFiles Include="$(MSBuildThisFileDirectory)CodeAnalysis\osu-framework.globalconfig" />
+  </ItemGroup>
+  <PropertyGroup Label="Code Analysis">
+    <AnalysisMode>Default</AnalysisMode>
+    <AnalysisModeDesign>Default</AnalysisModeDesign>
+    <AnalysisModeDocumentation>Recommended</AnalysisModeDocumentation>
+    <AnalysisModeGlobalization>Recommended</AnalysisModeGlobalization>
+    <AnalysisModeInteroperability>Recommended</AnalysisModeInteroperability>
+    <AnalysisModeMaintainability>Recommended</AnalysisModeMaintainability>
+    <AnalysisModeNaming>Default</AnalysisModeNaming>
+    <AnalysisModePerformance>Minimum</AnalysisModePerformance>
+    <AnalysisModeReliability>Recommended</AnalysisModeReliability>
+    <AnalysisModeSecurity>Default</AnalysisModeSecurity>
+    <AnalysisModeUsage>Default</AnalysisModeUsage>
+  </PropertyGroup>
+  <PropertyGroup Label="NuGet">
+    <Authors>ppy Pty Ltd</Authors>
+    <Company>ppy Pty Ltd</Company>
+    <Copyright>Copyright (c) 2024 ppy Pty Ltd</Copyright>
+    <Product>osu!framework</Product>
+    <PackageReleaseNotes>Automated release.</PackageReleaseNotes>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageIcon>icon.png</PackageIcon>
+    <PackageProjectUrl>https://github.com/ppy/osu-framework</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/ppy/osu-framework</RepositoryUrl>
+  </PropertyGroup>
+</Project>
