@@ -1,0 +1,24 @@
+----------------------------------------------------------
+performance Log (LogLevel: Verbose)
+Running osu-8k 0.0.0.0 on .NET 10.0.5
+Environment: Windows (Microsoft Windows NT 10.0.26200.0), 32 cores 
+----------------------------------------------------------
+2026-09-30 21:51:15 [verbose]: TextureAtlas initialised (1024x1024)
+2026-09-30 21:51:15 [verbose]: TextureAtlas initialised (1024x1024)
+2026-09-30 21:51:15 [verbose]: Texture requested (1920x8) which exceeds TextureStore's atlas size (1024x1024) - bypassing atlasing. Consider using LargeTextureStore.
+2026-09-30 21:51:15 [verbose]: Texture requested (1024x1024) which exceeds TextureStore's atlas size (1024x1024) - bypassing atlasing. Consider using LargeTextureStore.
+2026-09-30 21:51:15 [verbose]: TextureAtlas size exceeded 1 time(s); generating new texture (1024x1024)
+2026-09-30 21:51:16 [verbose]: TextureAtlas initialised (1024x1024)
+2026-09-30 21:51:20 [verbose]: TextureAtlas size exceeded 2 time(s); generating new texture (1024x1024)
+2026-09-30 21:51:24 [verbose]: TextureAtlas size exceeded 1 time(s); generating new texture (1024x1024)
+2026-09-30 21:51:24 [verbose]: TextureAtlas initialised (1024x1024)
+2026-09-30 21:51:24 [verbose]: TextureAtlas size exceeded 2 time(s); generating new texture (1024x1024)
+2026-09-30 21:51:24 [verbose]: TextureAtlas size exceeded 3 time(s); generating new texture (1024x1024)
+2026-09-30 21:51:24 [verbose]: Texture requested (2048x1404) which exceeds TextureStore's atlas size (1024x1024) - bypassing atlasing. Consider using LargeTextureStore.
+2026-09-30 21:51:24 [verbose]: Texture requested (2048x1404) which exceeds TextureStore's atlas size (1024x1024) - bypassing atlasing. Consider using LargeTextureStore.
+2026-09-30 21:51:24 [verbose]: Texture requested (2048x1404) which exceeds TextureStore's atlas size (1024x1024) - bypassing atlasing. Consider using LargeTextureStore.
+2026-09-30 21:51:24 [verbose]: TextureAtlas size exceeded 4 time(s); generating new texture (1024x1024)
+2026-09-30 21:51:24 [verbose]: Texture requested (2048x1404) which exceeds TextureStore's atlas size (1024x1024) - bypassing atlasing. Consider using LargeTextureStore.
+2026-09-30 21:51:24 [verbose]: TextureAtlas size exceeded 5 time(s); generating new texture (1024x1024)
+2026-09-30 21:51:26 [verbose]: TextureAtlas size exceeded 1 time(s); generating new texture (1024x1024)
+2026-09-30 21:53:44 [verbose]: TextureAtlas size exceeded 3 time(s); generating new texture (1024x1024)
