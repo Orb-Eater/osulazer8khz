@@ -45,11 +45,13 @@ namespace osu.Game.Rulesets.Osu.Objects.Drawables
         }
 
         private readonly Bindable<bool> hitAnimations = new Bindable<bool>(true);
+        private readonly Bindable<bool> instantFadeOut = new Bindable<bool>();
 
         [BackgroundDependencyLoader]
         private void load(OsuRulesetConfigManager? osuConfig)
         {
             osuConfig?.BindWith(OsuRulesetSetting.HitAnimations, hitAnimations);
+            osuConfig?.BindWith(OsuRulesetSetting.InstantFadeOut, instantFadeOut);
 
             Origin = Anchor.Centre;
             Size = OsuHitObject.OBJECT_DIMENSIONS;
@@ -108,7 +110,9 @@ namespace osu.Game.Rulesets.Osu.Objects.Drawables
                     break;
 
                 case ArmedState.Hit:
-                    if (!hitAnimations.Value)
+                    if (instantFadeOut.Value)
+                        this.FadeOut();
+                    else if (!hitAnimations.Value)
                         this.FadeOut(60, Easing.Out);
                     else
                     {

@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Linq;
 using JetBrains.Annotations;
 using osu.Framework.Allocation;
+using osu.Game.Rulesets.Osu.Configuration;
 using osu.Framework.Bindables;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
@@ -92,9 +93,13 @@ namespace osu.Game.Rulesets.Osu.Objects.Drawables
             AddLayout(relativeAnchorPositionLayout = new LayoutValue(Invalidation.DrawSize | Invalidation.MiscGeometry));
         }
 
+        private readonly Bindable<bool> instantFadeOut = new Bindable<bool>();
+
         [BackgroundDependencyLoader]
-        private void load()
+        private void load([CanBeNull] OsuRulesetConfigManager osuConfig)
         {
+            osuConfig?.BindWith(OsuRulesetSetting.InstantFadeOut, instantFadeOut);
+
             tailContainer = new Container<DrawableSliderTail> { RelativeSizeAxes = Axes.Both };
 
             AddRangeInternal(new Drawable[]
@@ -358,11 +363,12 @@ namespace osu.Game.Rulesets.Osu.Objects.Drawables
             {
                 case ArmedState.Hit:
                     if (HeadCircle.IsHit && SliderBody?.SnakingOut.Value == true)
-                        Body.FadeOut(40); // short fade to allow for any body colour to smoothly disappear.
+                        Body.FadeOut(instantFadeOut.Value ? 0 : 40); // short fade to allow for any body colour to smoothly disappear.
                     break;
             }
 
-            this.FadeOut(fade_out_time).Expire();
+            // instafade: the whole slider disappears the moment it is completed. Misses keep their fade.
+            this.FadeOut(state == ArmedState.Hit && instantFadeOut.Value ? 0 : fade_out_time).Expire();
         }
 
         public override bool ReceivePositionalInputAt(Vector2 screenSpacePos) => SliderBody?.ReceivePositionalInputAt(screenSpacePos) ?? base.ReceivePositionalInputAt(screenSpacePos);

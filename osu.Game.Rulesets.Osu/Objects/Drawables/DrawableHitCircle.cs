@@ -53,11 +53,13 @@ namespace osu.Game.Rulesets.Osu.Objects.Drawables
         }
 
         private readonly Bindable<bool> hitAnimations = new Bindable<bool>(true);
+        private readonly Bindable<bool> instantFadeOut = new Bindable<bool>();
 
         [BackgroundDependencyLoader]
         private void load(OsuRulesetConfigManager? osuConfig)
         {
             osuConfig?.BindWith(OsuRulesetSetting.HitAnimations, hitAnimations);
+            osuConfig?.BindWith(OsuRulesetSetting.InstantFadeOut, instantFadeOut);
 
             Origin = Anchor.Centre;
 
@@ -218,7 +220,10 @@ namespace osu.Game.Rulesets.Osu.Objects.Drawables
                 default:
                     ApproachCircle.FadeOut();
 
-                    if (!hitAnimations.Value)
+                    // instafade: skip the fade entirely, regardless of the hit animations setting.
+                    if (instantFadeOut.Value)
+                        this.FadeOut();
+                    else if (!hitAnimations.Value)
                         this.FadeOut(60, Easing.Out);
                     break;
 

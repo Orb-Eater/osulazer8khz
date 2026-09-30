@@ -99,7 +99,7 @@ namespace osu.Game
         // Different port allows running release and debug builds alongside each other.
         public const string IPC_PIPE_NAME = "osu-lazer-debug";
 #else
-        public const string IPC_PIPE_NAME = "osu-lazer";
+        public const string IPC_PIPE_NAME = "osu-lazer-8k";
 #endif
 
         /// <summary>

@@ -206,8 +206,8 @@ namespace osu.Game.Graphics.UserInterface
             bool hasSignificantChanges = aimRatesChanged
                                          || hasDrawSpike
                                          || hasUpdateSpike
-                                         || displayedFpsCount < aimDrawFPS * 0.8
-                                         || 1000 / displayedFrameTime < aimUpdateFPS * 0.8;
+                                         || (aimDrawFPS < 10000 && displayedFpsCount < aimDrawFPS * 0.8)
+                                         || (aimUpdateFPS < 10000 && 1000 / displayedFrameTime < aimUpdateFPS * 0.8);
 
             if (hasSignificantChanges)
                 requestDisplay();
@@ -231,7 +231,7 @@ namespace osu.Game.Graphics.UserInterface
 
         private void updateFpsDisplay()
         {
-            counterDrawFPS.Colour = getColour(displayedFpsCount / aimDrawFPS);
+            counterDrawFPS.Colour = getColour(aimDrawFPS >= 10000 ? 1d : displayedFpsCount / aimDrawFPS);
             counterDrawFPS.Text = $"{displayedFpsCount:#,0} fps";
         }
 
@@ -241,7 +241,7 @@ namespace osu.Game.Graphics.UserInterface
                 ? $"{displayedFrameTime:N1} ms"
                 : $"{displayedFrameTime:N0} ms";
 
-            counterUpdateFrameTime.Colour = getColour((1000 / displayedFrameTime) / aimUpdateFPS);
+            counterUpdateFrameTime.Colour = getColour(aimUpdateFPS >= 10000 ? 1d : (1000 / displayedFrameTime) / aimUpdateFPS);
         }
 
         private bool updateAimFPS()

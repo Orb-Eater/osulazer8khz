@@ -80,7 +80,7 @@ namespace osu.Game
 #if DEBUG
         public const string GAME_NAME = "osu! (development)";
 #else
-        public const string GAME_NAME = "osu!";
+        public const string GAME_NAME = "osu! (8k)";
 #endif
 
         public const string OSU_PROTOCOL = "osu://";

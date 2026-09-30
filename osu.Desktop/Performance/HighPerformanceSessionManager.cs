@@ -2,10 +2,10 @@
 // See the LICENCE file in the repository root for full licence text.
 
 using System;
-using System.Runtime;
 using System.Threading;
 using osu.Framework.Allocation;
 using osu.Framework.Logging;
+using osu.Framework.Platform;
 using osu.Game.Performance;
 
 namespace osu.Desktop.Performance
@@ -15,8 +15,6 @@ namespace osu.Desktop.Performance
         public bool IsSessionActive => activeSessions > 0;
 
         private int activeSessions;
-
-        private GCLatencyMode originalGCMode;
 
         public IDisposable BeginSession()
         {
@@ -34,11 +32,10 @@ namespace osu.Desktop.Performance
 
             Logger.Log("Starting high performance session");
 
-            originalGCMode = GCSettings.LatencyMode;
-            GCSettings.LatencyMode = GCLatencyMode.LowLatency;
+            FrameStats.Begin();
 
-            // Without doing this, the new GC mode won't kick in until the next GC, which could be at a more noticeable point in time.
-            GC.Collect(0);
+            // Upstream behaviour (LowLatency, then GC.Collect(0)) unless OSU_GC_MODE / OSU_GC_COLLECT_AT_START / OSU_NOGC_MB say otherwise.
+            GCSession.Begin();
         }
 
         private void exitSession()
@@ -51,8 +48,9 @@ namespace osu.Desktop.Performance
 
             Logger.Log("Ending high performance session");
 
-            if (GCSettings.LatencyMode == GCLatencyMode.LowLatency)
-                GCSettings.LatencyMode = originalGCMode;
+            FrameStats.End();
+
+            GCSession.End();
 
             // No GC.Collect() as we were already collecting at a higher frequency in the old mode.
         }
