@@ -247,3 +247,70 @@ The user ran baseline twice (1a may have been disturbed by a third-party app). F
 - 64 Hz rhythm still present (Interactive: peak 64 Hz, 5212x the median). Slow band 0.3-0.5 ms: swap ~0.18-0.23 ms
   vs 0.033 typical, no GC.
 - What the user felt: not yet asked.
+
+## Plan Step E (2026-09-30, cloud session; agreed steps E1-E3 from NEXT.md)
+
+SDL source read: libsdl-org/SDL a8591d9 (the commit ppy/SDL3-CS pins on 2026-07-22, version 3.5.0; not verified that NuGet
+2026.722.0 was built from exactly this pin). Paths are in `src/video/windows/SDL_windowsevents.c` unless named.
+
+### E1 - measure the tablet cursor (pen group)
+What SDL does on Windows:
+- Pens arrive only as `WM_POINTER*` (PT_PEN): `GetPointerPenInfo`, then `SDL_SendPenTouch/Motion/Button/Axis`. No Wintab.
+  One fake pen device for all pens. Handling the message returns 0, so no legacy mouse messages follow.
+- Timestamp: every pen event uses `WIN_GetEventTimestamp()`, the same `GetMessageTime` value as keys (15.6 ms steps).
+  `POINTER_INFO.PerformanceCount` is not used. So **os->pump for the pen is not usable, same as keys**; use pump->update
+  and update->present.
+- SDL does not coalesce pen motion (it only drops a motion with unchanged x/y). Whether Windows batches `WM_POINTERUPDATE`
+  is unknown.
+- A tablet in mouse mode arrives instead as absolute raw mouse, which SDL turns into pen motion on a fake "raw mouse
+  input" pen (the framework sets `SDL_HINT_PEN_MOUSE_EVENTS=0`); those carry the raw-input thread's QPC time.
+  Which path the owner's tablet uses cannot be told from the source; the os->pump spread in the results will show it
+  (stepped = WM_POINTER).
+What gets built (only under `OSU_FRAME_STATS`, preallocated, nothing when off):
+- A third recorder lane "pen": `SDL3Window` pen handlers bracket the handler call with the event timestamp and pump time
+  (as keys/mouse do), `PenHandler` records each enqueued input's kind and the consume time in `CollectPendingInputs`.
+- Kinds only: 5 pen move, 6 pen touch down, 7 pen touch up, 8 pen button down, 9 pen button up. No position,
+  pressure or button id.
+- `[inputdelay]` gets a third group "pen" (and "pen move" separately from touch/buttons if needed for readability).
+
+### E2 - raw keyboard (`OSU_RAW_KEYBOARD=1`)
+What SDL does with `SDL_HINT_WINDOWS_RAW_KEYBOARD=1` (settable at any time; the callback starts it at once):
+- Keys are read by SDL's raw-input thread ("SDLRawInput", `SDL_windowsrawinput.c`, time-critical priority, the same thread
+  as raw mouse), which calls `SDL_SendKeyboardKey` itself. The stamp is one `SDL_GetTicksNS()` (QPC) taken right after
+  `GetRawInputBuffer` returns. So keys get a real stamp, and the event is in SDL's queue as soon as that thread wakes.
+  The framework's pump still sees it at its next `SDL_PumpEvents`, so pump->update is not expected to change;
+  os->pump becomes a real OS-to-pump delay for keys.
+- Text input / IME: `TranslateMessage` still runs, so `WM_CHAR` and text input keep working. While text input is active
+  (a text box focused) SDL drops raw key-downs and sends keys from the message path instead (old stamps). Gameplay has
+  text input off, so gameplay keys go through raw. The owner should still check typing in chat/search and IME.
+- The framework sets it in `SDL3Window.Create()` next to its other hints, only when `OSU_RAW_KEYBOARD=1`.
+
+### E3 - update->present: first measure the parts, then change
+Reading of the code (framework): update runs free (~0.126 ms/frame), faster than draw (~0.163 ms/present), so the draw
+thread never waits for update and drops about 1 in 4 update buffers. `TripleBuffer.GetForRead` already takes the newest
+buffer (upstream), so "skip stale buffers" is already done. The frame-ready wait never blocks here (`ready` 0.000 ms).
+Estimate of the ~0.55 ms: rest of update frame after the input is dequeued ~0.10, wait for the draw thread to finish its
+current frame ~0.085, draw ~0.128, swap ~0.033 = ~0.35 ms. **About 0.2 ms is unexplained**; the likely reason is that the
+frames around an input (hit effects, judgement) are heavier than average, but this cannot be computed from the files
+today because the draw->update-frame link is not written.
+So this round adds measurement only (under `OSU_FRAME_STATS`):
+- `.bin` v4: per draw frame the update-frame index it drew (already in memory), and per update frame the publish time
+  (one `Stopwatch.GetTimestamp` when the buffer is written).
+- Analyser and `[inputdelay]`: split update->present into update (dequeue -> publish), queue (publish -> draw start) and
+  draw+swap (draw start -> present), and "frame age at present" for all draw frames.
+Candidate change for the NEXT round, chosen from those numbers (not built now): P1 "late update" - phase-lock the update
+frame to the draw thread so its buffer is published just before draw takes one. Estimated gain 0.03-0.05 ms on the
+queue part, with a risk to the lows if draw stalls. Rejected from reading: collecting input later in the frame (adds a
+frame), skipping the frame-ready wait (it never blocks; can grow the driver queue), DXGI max frame latency (inside
+ppy.Veldrid, invisible to the recorder). Making draw+swap cheaper is the same work as the slow band ("ask first").
+
+### Round E launchers (same map each, play in order)
+| # | launcher | change vs `play-8k-diagnose.bat` |
+|---|---|---|
+| 1 | `1-baseline.bat` | none |
+| 2 | `2-interactive.bat` | `OSU_GC_MODE=Interactive` |
+| 3 | `3-rawkeyboard.bat` | `OSU_RAW_KEYBOARD=1` |
+| 4 | `4-rawkeyboard-interactive.bat` | `OSU_RAW_KEYBOARD=1` + `OSU_GC_MODE=Interactive` |
+Pen recording and the E3 split are part of `OSU_FRAME_STATS` in every run. Measured: lows, keys pump->update /
+update->present (and os->pump in 3/4, now meaningful), pen pump->update / update->present, the E3 split. Also asked:
+what each run felt like, and whether typing (chat, song search, IME) works in 3 and 4.
