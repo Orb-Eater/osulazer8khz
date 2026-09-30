@@ -314,3 +314,13 @@ ppy.Veldrid, invisible to the recorder). Making draw+swap cheaper is the same wo
 Pen recording and the E3 split are part of `OSU_FRAME_STATS` in every run. Measured: lows, keys pump->update /
 update->present (and os->pump in 3/4, now meaningful), pen pump->update / update->present, the E3 split. Also asked:
 what each run felt like, and whether typing (chat, song search, IME) works in 3 and 4.
+
+## Step E built (2026-09-30, Sonnet agent, reviewed; not played yet)
+- Framework: pen lane (kinds 5-9) in `SDL3Window` pen handlers + `PenHandler`; `OSU_RAW_KEYBOARD=1` sets
+  `SDL_HINT_WINDOWS_RAW_KEYBOARD` in `SDL3Window.Create()` and logs `[input] raw keyboard on`; `.bin` v4 adds
+  `frame.update_index:i32` and `update.publish_ms:f32`; `[inputdelay]` has groups keys+buttons / mouse move / pen move /
+  pen touch+buttons, each with update->present split into update(consume->publish) + queue(publish->draw start) +
+  draw+swap(draw start->present), plus "frame age at present" over all draw frames.
+- Release build 0 warnings / 0 errors before and after. Analyser checked on synthetic v3 and v4 files only (no real file).
+- The update frame still running at session end has no publish time: its inputs show n/a in the split.
+- Round E launchers `1-`..`4-` are in `8k/launchers/`. Waiting on the owner's run.

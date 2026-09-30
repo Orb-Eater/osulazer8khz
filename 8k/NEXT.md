@@ -89,6 +89,13 @@ From first object, round D (same map; delays in ms, keys+buttons, ~915 events pe
   64 Hz (15.625 ms) rhythm in the slow frames.
 
 
+## Round E (2026-09-30, cloud session): built, waiting on the owner
+
+E1 (pen lane), E2 (`OSU_RAW_KEYBOARD`) and the E3 measurement (`.bin` v4, update->present split) are built; see
+"Plan Step E" and "Step E built" in `PLAN-lows.md`. Launchers `1-baseline`, `2-interactive`, `3-rawkeyboard`,
+`4-rawkeyboard-interactive`. After the run: record the results table, ask what each felt like and whether typing / IME
+worked in 3 and 4, then choose the E3 change (candidate P1 "late update") from the split.
+
 ## Agreed next steps (in order)
 
 Written by the local session on 2026-09-30 from the round D results; the owner asked for a cloud agent

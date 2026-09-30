@@ -1,5 +1,6 @@
 # Reads an in-game frame-stats .bin written by OSU_FRAME_STATS=1 and prints the frame-time stats, an attribution table for
-# slow frames, a 64 Hz check, the per-second GC numbers and (v3) the input-delay stats. Reads the v3 and v2 formats (see README "Measuring") and the old
+# slow frames, a 64 Hz check, the per-second GC numbers and (v3+) the input-delay stats, with pen groups and (v4) the update->present split and the
+# frame age at present. Reads the v4, v3 and v2 formats (see README "Measuring") and the old
 # headerless v1 files (float32 little-endian ms gaps only; only the whole-session stats are available then).
 # Optionally lines the game's numbers up against a CapFrameX capture JSON.
 # Usage: python tools/framestats_analyse.py "<file.bin>" ["<CapFrameX-osu!.exe-....json>"]
@@ -8,7 +9,7 @@ import json, struct, sys
 import numpy as np
 
 MAGIC = b'OSUFRMST'
-TYPES = {'f32': '<f4', 'f64': '<f8', 'u64': '<u8', 'u32': '<u4', 'u8': 'u1'}
+TYPES = {'f32': '<f4', 'f64': '<f8', 'u64': '<u8', 'u32': '<u4', 'i32': '<i4', 'u8': 'u1'}
 
 
 def load_bin(path):
@@ -185,21 +186,83 @@ def input_delay(data):
     kind = i['kind']
     t_upd = i['pump_ms'] + p_u
     first = data['first_object_ms']
-    print('input delay (ms; keys use Windows message times for the os stamp, so os->pump is coarse for keys, see README)')
+    split = split_update_present(data, t_upd) if data['version'] >= 4 else None
+    print('input delay (ms; keys and pen use Windows message times for the os stamp, so os->pump is coarse for them, see README)')
     for title, sel_time in (('from first object', first >= 0 and t_upd >= first), ('whole session', np.ones(len(kind), bool))):
         if title == 'from first object' and first < 0:
             print('  first object was never marked: no "from first object" input stats')
             continue
         print(f'  {title}')
-        for name, m in (('keys+buttons', kind != 4), ('mouse move', kind == 4)):
+        groups = (('keys+buttons', kind <= 3), ('mouse move', kind == 4), ('pen move', kind == 5), ('pen touch+buttons', (kind >= 6) & (kind <= 9)))
+        for name, m in groups:
             m = m & sel_time
             print(f'    {name}: n={int(m.sum())}')
-            cols = (('os->pump', os_p[m]), ('pump->update', p_u[m]), ('os->update', (os_p + p_u)[m]),
-                    ('os->present', (os_p + p_u + u_p)[m]), ('update->present', u_p[m]))
+            cols = [('os->pump', os_p[m]), ('pump->update', p_u[m]), ('os->update', (os_p + p_u)[m]),
+                    ('os->present', (os_p + p_u + u_p)[m]), ('update->present', u_p[m])]
+            if split is not None:
+                cols += [('= update', split[0][m]), ('+ queue', split[1][m]), ('+ draw+swap', split[2][m])]
             for label, v in cols:
                 v = v[~np.isnan(v)]
                 print(f'      {label:>16}: {_pct(v)}')
+    if split is not None:
+        print('  update = consume -> publish of the consuming update frame; queue = publish -> start of the draw that presents it; '
+              'draw+swap = draw start -> present.\n  The consuming update frame is found from the consume time (pump_ms + pump_to_update_ms); '
+              'inputs consumed in the update frame still running at the end of the session have no publish time and are left out of the split.')
+    else:
+        print('  (no update->present split: needs a v4 file)')
     print()
+
+
+def update_starts(data):
+    """Start of every update frame (ms after the draw origin); one more entry than there are update records (the frame running at the end)."""
+    return data['offset_ms'] + np.concatenate(([0.0], np.cumsum(data['update']['frame_ms'])))
+
+
+def split_update_present(data, t_upd):
+    """Per input (v4): (update, queue, draw+swap) in ms, NaN where the consuming update frame has no publish time or no draw frame presented it.
+    Draw start of frame k = present(k) - swap_ms[k] - draw_ms[k]; present(k) = sum(gap_ms[0..k])."""
+    f, upd = data['frame'], data['update']
+    nan = np.full(len(t_upd), np.nan)
+    if 'update_index' not in f or 'publish_ms' not in upd:
+        return nan, nan.copy(), nan.copy()
+    starts = update_starts(data)
+    pub = upd['publish_ms']
+    u = len(pub)
+    pt = np.cumsum(f['gap_ms'])
+    drawstart = pt - f['swap_ms'] - f['draw_ms']
+    j = np.searchsorted(starts, t_upd, side='right') - 1
+    idx = np.maximum.accumulate(f['update_index'])
+    k = np.searchsorted(idx, j, side='left')
+    ok = (j >= 0) & (j < u) & (k < len(pt))
+    jj, kk = np.where(ok, j, 0), np.where(ok, k, 0)
+    pub_abs = starts[jj] + pub[jj]
+    ok &= ~np.isnan(pub_abs)
+    a = np.where(ok, pub_abs - t_upd, np.nan)
+    b = np.where(ok, drawstart[kk] - pub_abs, np.nan)
+    c = np.where(ok, pt[kk] - drawstart[kk], np.nan)
+    return a, b, c
+
+
+def frame_age(data, lo):
+    """Frame age at present (v4), for the draw frames from index lo: present minus the start of the update frame drawn, and minus its publish time."""
+    f, upd = data['frame'], data['update']
+    if 'update_index' not in f or 'publish_ms' not in upd:
+        return
+    starts = update_starts(data)
+    pub = upd['publish_ms']
+    u = len(pub)
+    pt = np.cumsum(f['gap_ms'])[lo:]
+    j = f['update_index'][lo:].astype(np.int64)
+    known = (j >= 0) & (j <= u)
+    jj = np.where(known, j, 0)
+    age = (pt - starts[jj])[known]
+    pk = known & (j < u)
+    jp = np.where(pk, j, 0)
+    pp = (pt - (starts[jp] + pub[jp]))[pk]
+    pp = pp[~np.isnan(pp)]
+    print(f'frame age at present ({"from first object" if lo else "whole session"}; {int(known.sum())} of {len(pt)} draw frames have a known update frame)')
+    print(f'  present - start of the update frame drawn: {_pct(age)}')
+    print(f'  present - its publish time (publish->present): {_pct(pp)}  ({len(pp)} frames)\n')
 
 
 def what_if(data, lo):
@@ -278,6 +341,8 @@ def main():
         seconds(data)
         if data['version'] >= 3:
             input_delay(data)
+        if data['version'] >= 4:
+            frame_age(data, lo)
         gc_text(sys.argv[1])
     else:
         print('v1 file: no breakdown, first-object marker or GC data\n')

@@ -67,6 +67,7 @@ USB/HID and the Windows input stack — which osu! stable pays identically.
 | `OSU_EXTERNAL_UPDATE_PROVIDER` | set by launchers | Disarms Velopack: no self-update, and no hijacking the `osu://` / `.osz` / `.osr` file associations your official install owns. **Keep this set.** |
 | `OSU_SPIKE_LOG_MS` | unset (off) | Logs every gap between presented frames longer than this many ms as a `[spike]` line in the runtime log: time in the frame-ready wait, waiting for update, draw and swap, the longest update-thread gap, and GC activity. Only while focused. `play-8k-diagnose.bat` sets it to `5`. See `PLAN-lows.md`. |
 | `OSU_FRAME_STATS` | unset (off) | `1` = the game measures its own frame times during gameplay (between "Starting/Ending high performance session"): present gaps with a wait/draw/swap breakdown and a GC flag per frame, update-thread frame times, per-second allocation and GC counters, a marker at the first hit object, and the software delay of every key, mouse button and mouse move (see Input delay below). When the session ends it writes one `[framestats]` line to the runtime log, plus `%APPDATA%\osu-8k\framestats\<UTC yyyyMMdd-HHmmss>.bin` (format under Measuring) and a matching `.txt`; also one `[inputdelay]` line. No cost when off. `play-8k-diagnose.bat` sets it. |
+| `OSU_RAW_KEYBOARD` | unset (off) | `1` = sets SDL's `SDL_HINT_WINDOWS_RAW_KEYBOARD`: on Windows the keyboard is read through raw input by SDL's raw-input thread, which stamps each key with a real `SDL_GetTicksNS` (QPC) time instead of the 15.6 ms Windows message time. Logs `[input] raw keyboard on` once. Caveat: while text input is active (a text box is focused: chat, song search, IME) SDL ignores the raw key-downs and takes keys from the normal message path, so typing should still work, but check it; gameplay has text input off, so gameplay keys go through raw input. Harmless (no effect) on other platforms. See Input delay below and `PLAN-lows.md` (Plan Step E). |
 | `OSU_SPIN_PAUSE` | unset (off) | Adds a CPU pause hint to the draw thread's busy-wait for a new update frame. Untested. |
 | `OSU_GC_MODE` | unset = `LowLatency` (upstream) | GC latency mode during gameplay: `LowLatency`, `Batch`, `Interactive`, `SustainedLowLatency`, or `Keep` (do not change the mode). Restored at session end. Found 2026-09-30: `LowLatency` gives a gen0 budget of only ~250 KB (about 40 GCs/s in gameplay); see `PLAN-lows.md`. |
 | `OSU_GC_COLLECT_AT_START` | unset = `0` (upstream) | Generation collected when a gameplay session starts: `0`, `1`, `2`, or `-1` for none. Skipped when `OSU_NOGC_MB` is set (entering the region collects anyway). |
@@ -106,31 +107,49 @@ Files recorded before this change (Step C, 2026-09-30) marked `StartTime` for ev
 
 #### Input delay
 
-Recorded only under `OSU_FRAME_STATS`, between the session start and end, into preallocated buffers (nothing allocated per event; 4M mouse events
-and 64K key/button events per session, then recording stops and a flag is set). Per event, nothing but kinds and times is kept: no key codes, button ids,
-positions, beatmap, username or score. Kinds: key down, key up, mouse button down, mouse button up, mouse move (mouse wheel is not measured). OS key repeats are not counted.
+Recorded only under `OSU_FRAME_STATS`, between the session start and end, into preallocated buffers (nothing allocated per event; 4M mouse events,
+4M pen events and 64K key/button events per session, then recording stops and a flag is set). Per event, nothing but kinds and times is kept: no key codes, button ids,
+positions, pressure, beatmap, username or score. Kinds: 0 key down, 1 key up, 2 mouse button down, 3 mouse button up, 4 mouse move (mouse wheel is not measured),
+5 pen move, 6 pen touch down, 7 pen touch up, 8 pen button down, 9 pen button up (pen proximity is not recorded). OS key repeats are not counted.
+Pen kinds follow the SDL event, not what the framework turns it into: a pen move while touching in direct mode is still kind 5 although the framework enqueues a touch input,
+and a touch down/up is kind 6/7 whether the framework makes a touch or a mouse button from it. `PenHandler` enqueues exactly one input per SDL pen event, so there is one record per event.
 
 | Time | What it is |
 |---|---|
 | os | The SDL event's own `timestamp` (ns, `SDL_GetTicksNS`), converted to the Stopwatch clock. See the clock finding below; how good it is depends on the event type. |
 | pump | `Stopwatch` timestamp taken when the input thread started handling the event in `SDL3Window` |
-| update | `Stopwatch` timestamp taken right after the update thread dequeued the input from its handler (`KeyboardHandler` / `MouseHandler`, in `InputHandler.CollectPendingInputs`). Mouse moves are merged per update frame afterwards by `CoalesceMouseMotion`; every physical event still has its own record with that frame's time. |
+| update | `Stopwatch` timestamp taken right after the update thread dequeued the input from its handler (`KeyboardHandler` / `MouseHandler` / `PenHandler`, in `InputHandler.CollectPendingInputs`). Mouse moves are merged per update frame afterwards by `CoalesceMouseMotion`; every physical event still has its own record with that frame's time. |
 | present | End of the first `Swap()` whose draw used the update frame that consumed the input or a later one. Identity, not time: the update thread stores its session update-frame index for each of the three draw-root (TripleBuffer) slots, the draw thread reads the index of the slot it draws and stores it per draw frame, and the writer finds the first draw frame with index >= the input's. The consuming frame itself counts because input is applied inside `UpdateSubTree`, before that frame's draw nodes are built. |
 
-The `[inputdelay]` line (runtime log and `.txt`) gives, for keys+buttons and for mouse move, from the first object and for the whole session:
+The `[inputdelay]` line (runtime log and `.txt`) gives, for four groups (keys+buttons = kinds 0-3, mouse move = 4, pen move = 5, pen touch+buttons = 6-9), from the first object and for the whole session:
 count and mean / p50 / p99 / max in ms of os->pump, pump->update, os->update, os->present and update->present (nearest-rank percentiles). "From first object"
-= inputs consumed at or after the first-object marker. Values that are not available (no OS stamp, no later present) are left out of that metric.
-`python tools\framestats_analyse.py` prints the same for v3 files.
+= inputs consumed at or after the first-object marker. Values that are not available (no OS stamp, no later present) are left out of that metric (`n/a`).
+`python tools\framestats_analyse.py` prints the same for v3 and v4 files. Example of the line's shape (numbers are placeholders):
+
+    [inputdelay] ms; os = ...; update->present = update(consume->publish) + queue(publish->draw start) + draw+swap(draw start->present), left out (n/a) where ... | from first object: [keys+buttons n=915] os->pump mean .. p50 .. p99 .. max ..; pump->update mean .. ; os->update ..; os->present ..; update->present mean .. ; = update(consume->publish) mean .. ; + queue(publish->draw start) mean .. ; + draw+swap(draw start->present) mean .. ; [mouse move n=0] ... [pen move n=..] ... [pen touch+buttons n=..] ... | whole session: (same four groups) | from first object: [frame age at present n=..] present - start of update frame drawn mean .. p50 .. p99 .. max ..; present - its publish mean .. ; | whole session: [frame age at present n=..] ...
+
+**The update->present split (v4).** update->present is cut into three parts that add up to it exactly: **update** = consume time -> publish time of the consuming update
+frame (the rest of that update frame after the input was dequeued, until `GameHost.UpdateFrame` stored its draw root in the triple buffer; the time is taken in `FrameStats.BufferWritten`,
+just before the buffer is released); **queue** = publish -> start of the draw that presents it (the wait for the draw thread to finish its current frame, including frames that were skipped
+because a newer buffer was published); **draw+swap** = start of that draw -> present. The draw start is derivable: draw start of draw frame k = present(k) - swap_ms[k] - draw_ms[k], where present(k) = sum(gap_ms[0..k]).
+**Frame age at present** is computed for every draw frame that has a known update frame: present minus the start of the update frame it drew (and, separately, minus that frame's publish time = the
+publish->present part), from the first object and for the whole session. Left out (`n/a`, never faked): inputs consumed in the update frame still running when the session ended (no publish time), draw frames with no update index (buffer full), and frames of the update frame that was running at the end.
+Per input, the consume (update) time is `pump_ms + pump_to_update_ms`; the `.bin` does not store the consuming update frame's index, the analyser finds it from that time and the update-frame start times.
+
+**Pen timestamps (SDL source read, not measured on hardware):** on Windows pens arrive only as `WM_POINTER*` messages and are stamped with the same `GetMessageTime` value as keys (15.6 ms steps), so os->pump for pen is coarse, like keys: use pump->update and update->present. A tablet in mouse mode arrives as absolute raw mouse and is turned into pen motion by SDL with the raw-input thread's QPC stamp; a stepped os->pump in the results means WM_POINTER.
+**Raw keyboard:** with `OSU_RAW_KEYBOARD=1` key events are stamped by SDL's raw-input thread with one `SDL_GetTicksNS()` (QPC) right after the raw input buffer is read, so os->pump for keys becomes a real OS-to-pump delay; the framework's pump still picks the event up at its next `SDL_PumpEvents`, so pump->update is not expected to change.
 
 **The SDL timestamp (measured 2026-09-30, SDL 3.5.0 from `ppy.SDL3-CS 2026.722.0`, Windows 11, scratch program that injects input with `SendInput` into an SDL window):**
 
 - Clock: `SDL_GetTicksNS` is based on `QueryPerformanceCounter`, the same counter as `Stopwatch` (10 MHz here). The offset between the two is constant: paired reads taken 3 s apart differed by 0.0 us, and the game's conversion was 0.1 us off on a fresh pair. The offset is taken at startup from the pair with the smallest gap out of 2,000.
 - Keyboard, and mouse buttons and motion when the window is not in relative (raw) mode: SDL stamps these from the Windows message time (`GetMessageTime`, a 32-bit millisecond tick) and converts it to the `SDL_GetTicksNS` scale (`WIN_GetEventTimestamp` in `SDL_windowsevents.c`). Measured: the stamp is stepped (only a few distinct sub-millisecond values over 60 events; it stayed that way with `timeBeginPeriod(1)` set), ran from 3 ms after to 15 ms before the moment the event was sent, and the very first event after startup was 330 ms off (SDL sets its offset from the first message). So for keys os->pump is not a measure of the OS-to-pump delay: it is that delay plus up to about 15 ms of clock granularity, and can be negative. Use pump->update and update->present for keys.
-- Mouse buttons and motion in relative mode (raw input, which gameplay uses when the cursor is hidden): measured stamps were 0.03 to 0.3 ms after the send (microsecond resolution, 60 distinct values in 60), while the pump ran up to 4.5 ms after the send. So these are stamped by SDL's raw-input handling when the OS delivers them, not at pump time, and os->pump is a real OS-to-pump delay here. Pen, touch and tablet handlers are not measured.
+- Mouse buttons and motion in relative mode (raw input, which gameplay uses when the cursor is hidden): measured stamps were 0.03 to 0.3 ms after the send (microsecond resolution, 60 distinct values in 60), while the pump ran up to 4.5 ms after the send. So these are stamped by SDL's raw-input handling when the OS delivers them, not at pump time, and os->pump is a real OS-to-pump delay here. Touch handlers are not measured; the pen handler is (see below).
 - Events from the global mouse poll (cursor outside the window) have no SDL timestamp; they are recorded with pump and update times only.
 - Not covered: the time from the physical action to the OS stamp (USB/HID, Windows input stack), and from `Swap()` to the photons.
 
-#### `.bin` format, version 3 (little-endian)
+#### `.bin` format, version 4 (little-endian)
+
+Version 4 adds two things to version 3: the per-draw-frame `update_index` column and the per-update-frame `publish_ms` column (the field list below); the header layout is the same. Pen records (kinds 5-9) are stored after the keyboard and mouse records in the `input` section (version 3 files have no pen records). Older files are described as version 3 below; version 3 lacks the two new columns, and the analyser reads v1 to v4.
 
 64-byte fixed header, then `u32 length` + UTF-8 field list, then the columns in field-list order, each
 contiguous. Old v1 files have no header (raw float32 gaps) and do not start with the magic.
@@ -138,7 +157,7 @@ contiguous. Old v1 files have no header (raw float32 gaps) and do not start with
 | Offset | Type | Meaning |
 |---|---|---|
 | 0 | char[8] | magic `OSUFRMST` |
-| 8 | u32 | version, 3 (2 = same without the input section and with the reserved bytes zero; readers accept 1, 2 and 3) |
+| 8 | u32 | version, 4 (3 = same without `update_index` / `publish_ms`; 2 = additionally without the input section and with the reserved bytes zero; readers accept 1 to 4) |
 | 12 | u32 | header size = offset of the first column (64 + 4 + field list length) |
 | 16 / 20 / 24 | u32 | frame count N / update-frame count U / per-second sample count S |
 | 28 | i32 | first-object draw-frame index into the frame columns, -1 if never marked |
@@ -149,15 +168,17 @@ contiguous. Old v1 files have no header (raw float32 gaps) and do not start with
 | 52 | u32 | input flags: bit0 an input buffer filled, bit1 inputs were lost before the update thread consumed them |
 | 56 | f64 | first-object time, ms after the draw origin, -1 if never marked. An input is "from first object" if its update time (pump_ms + pump_to_update_ms) is at or after this. |
 
-Field list: `frame[gap_ms:f32,ready_wait_ms:f32,update_wait_ms:f32,draw_ms:f32,swap_ms:f32,gc0:u8];update[frame_ms:f32];second[elapsed_s:f64,alloc_bytes:u64,gc_pause_ms:f64,gen0:u32,gen1:u32,gen2:u32];input[pump_ms:f64,os_to_pump_ms:f32,pump_to_update_ms:f32,update_to_present_ms:f32,kind:u8]`.
+Field list (v4): `frame[gap_ms:f32,ready_wait_ms:f32,update_wait_ms:f32,draw_ms:f32,swap_ms:f32,gc0:u8,update_index:i32];update[frame_ms:f32,publish_ms:f32];second[elapsed_s:f64,alloc_bytes:u64,gc_pause_ms:f64,gen0:u32,gen1:u32,gen2:u32];input[pump_ms:f64,os_to_pump_ms:f32,pump_to_update_ms:f32,update_to_present_ms:f32,kind:u8]`.
+(v3 had `gc0:u8` last in `frame` and only `frame_ms:f32` in `update`.) `update_index` = index of the update frame that draw frame drew (-1 = unknown); `publish_ms` = time from the start of
+update frame j until its draw root was stored in the triple buffer (NaN = not recorded); the update frame still running at the end of the session has no record. Draw frame k started drawing at present(k) - swap_ms[k] - draw_ms[k].
 `frame` columns have N entries, `update` U, `second` S. Draw frame k is presented at sum(gap_ms[0..k]) after the
 origin (the first present of the session, not itself recorded). Update record j is the time from the start of
 update frame j to the start of update frame j+1; update frame j starts at `update origin offset` +
 sum(update frame_ms[0..j-1]) after the draw origin. `second` rows are deltas over the interval ending at
 `elapsed_s` (seconds after update frame 0; the last row is the partial final interval). gen0 counts every GC,
-gen1 every gen1+gen2 GC, gen2 gen2 only. `input` columns have I entries (keyboard-handler records first, then mouse-handler records, each in the
+gen1 every gen1+gen2 GC, gen2 gen2 only. `input` columns have I entries (keyboard-handler records first, then mouse-handler, then pen-handler records, each in the
 order the update thread consumed them): `pump_ms` = pump time, ms after the draw origin; `os_to_pump_ms`, `pump_to_update_ms`, `update_to_present_ms` as in
-Input delay (NaN = not available); `kind` 0 key down, 1 key up, 2 mouse button down, 3 mouse button up, 4 mouse move. os->update = os_to_pump + pump_to_update;
+Input delay (NaN = not available); `kind` 0 key down, 1 key up, 2 mouse button down, 3 mouse button up, 4 mouse move, 5 pen move, 6 pen touch down, 7 pen touch up, 8 pen button down, 9 pen button up. The records are ordered keyboard handler, mouse handler, pen handler. os->update = os_to_pump + pump_to_update;
 os->present adds update_to_present.
 
 ### A/B launchers
