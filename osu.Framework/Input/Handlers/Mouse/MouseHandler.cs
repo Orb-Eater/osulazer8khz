@@ -3,6 +3,7 @@
 
 #nullable disable
 
+using System.Collections.Generic;
 using System.Diagnostics;
 using osu.Framework.Bindables;
 using osu.Framework.Extensions.EnumExtensions;
@@ -203,22 +204,34 @@ namespace osu.Framework.Input.Handlers.Mouse
         protected virtual void HandleMouseMove(Vector2 position)
         {
             absolutePositionReceived = true;
-            enqueueInput(new MousePositionAbsoluteInput { Position = position });
+            enqueueInput(new MousePositionAbsoluteInput { Position = position }, 4);
         }
 
         protected virtual void HandleMouseMoveRelative(Vector2 delta)
         {
-            enqueueInput(new MousePositionRelativeInput { Delta = delta * (float)Sensitivity.Value });
+            enqueueInput(new MousePositionRelativeInput { Delta = delta * (float)Sensitivity.Value }, 4);
         }
 
-        private void handleMouseDown(MouseButton button) => enqueueInput(new MouseButtonInput(button, true));
+        private void handleMouseDown(MouseButton button) => enqueueInput(new MouseButtonInput(button, true), 2);
 
-        private void handleMouseUp(MouseButton button) => enqueueInput(new MouseButtonInput(button, false));
+        private void handleMouseUp(MouseButton button) => enqueueInput(new MouseButtonInput(button, false), 3);
 
-        private void handleMouseWheel(Vector2 delta, bool precise) => enqueueInput(new MouseScrollRelativeInput { Delta = delta, IsPrecise = precise });
+        private void handleMouseWheel(Vector2 delta, bool precise) => enqueueInput(new MouseScrollRelativeInput { Delta = delta, IsPrecise = precise }, 255);
 
-        private void enqueueInput(IInput input)
+        public override void CollectPendingInputs(List<IInput> inputs)
         {
+            int before = inputs.Count;
+            base.CollectPendingInputs(inputs);
+
+            if (FrameStats.Enabled)
+                FrameStats.InputsConsumed(1, inputs.Count - before);
+        }
+
+        private void enqueueInput(IInput input, byte frameStatsKind)
+        {
+            if (FrameStats.Enabled)
+                FrameStats.InputEnqueued(1, frameStatsKind);
+
             PendingInputs.Enqueue(input);
             FrameStatistics.Increment(StatisticsCounterType.MouseEvents);
             statistic_total_events.Value++;

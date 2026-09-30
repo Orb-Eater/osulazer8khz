@@ -11,6 +11,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using osu.Framework.Logging;
+using static SDL.SDL3;
 
 namespace osu.Framework.Platform
 {
@@ -28,21 +29,28 @@ namespace osu.Framework.Platform
     /// and a matching <c>.txt</c> into the <c>framestats</c> folder of the game's data directory.
     /// </para>
     /// <para>
-    /// .bin format, version 2, all little-endian: a 64 byte fixed header, then <c>u32 length + UTF-8 field list</c>, then the columns
+    /// Input delay: for every key press/release, mouse button press/release and mouse move the game records when the OS stamped the event (SDL's own
+    /// timestamp, see the README for what clock that is), when the input thread handled it, when the update thread consumed it, and when the first
+    /// frame containing that update frame was presented. Only kinds and times are kept, never which key or button or where the mouse was.
+    /// </para>
+    /// <para>
+    /// .bin format, version 3 (2 without the input section), all little-endian: a 64 byte fixed header, then <c>u32 length + UTF-8 field list</c>, then the columns
     /// in field-list order, each column contiguous.
     /// <code>
     ///   0  char[8] magic "OSUFRMST"
-    ///   8  u32 version (2)
+    ///   8  u32 version (3)
     ///  12  u32 header size = offset of the first column (64 + 4 + field list length)
     ///  16  u32 frame count N        20  u32 update-frame count U      24  u32 per-second sample count S
     ///  28  i32 first-object draw-frame index, -1 if never marked (an index into the frame columns)
     ///  32  i32 first-object update-frame index, -1 if never marked
     ///  36  u32 flags: bit0 draw buffer filled up, bit1 update buffer filled up
     ///  40  f64 update origin offset in ms (see below)
-    ///  48  16 reserved bytes, zero
+    ///  48  u32 input-event count I
+    ///  52  u32 input flags: bit0 an input buffer filled up, bit1 events were lost before the update thread consumed them
+    ///  56  f64 first-object time in ms after the draw origin, -1 if never marked
     /// </code>
-    /// Field list: <c>frame[gap_ms:f32,ready_wait_ms:f32,update_wait_ms:f32,draw_ms:f32,swap_ms:f32,gc0:u8];update[frame_ms:f32];second[elapsed_s:f64,alloc_bytes:u64,gc_pause_ms:f64,gen0:u32,gen1:u32,gen2:u32]</c>.
-    /// The frame section has N entries per column, update has U, second has S. Draw frame k is presented at the sum of gap_ms[0..k] after the origin
+    /// Field list: <c>frame[gap_ms:f32,ready_wait_ms:f32,update_wait_ms:f32,draw_ms:f32,swap_ms:f32,gc0:u8];update[frame_ms:f32];second[elapsed_s:f64,alloc_bytes:u64,gc_pause_ms:f64,gen0:u32,gen1:u32,gen2:u32];input[pump_ms:f64,os_to_pump_ms:f32,pump_to_update_ms:f32,update_to_present_ms:f32,kind:u8]</c>.
+    /// The input section has I entries (see the README for the meaning of each time; NaN = not available). The frame section has N entries per column, update has U, second has S. Draw frame k is presented at the sum of gap_ms[0..k] after the origin
     /// (the first present of the session, which is not itself recorded). Update record j is the time from the start of update frame j to the start of
     /// update frame j+1; update frame j starts at update_origin_offset_ms + sum(frame_ms[0..j-1]) after the draw origin. gc0 is 1 if
     /// <c>GC.CollectionCount(0)</c> changed since the previous frame. Per-second rows are deltas over the interval ending at elapsed_s
@@ -54,10 +62,13 @@ namespace osu.Framework.Platform
         private const int capacity = 8 * 1024 * 1024;
         private const int update_capacity = 8 * 1024 * 1024;
         private const int second_capacity = 7200;
+        private const int key_input_capacity = 64 * 1024;
+        private const int mouse_input_capacity = 4 * 1024 * 1024;
+        private const int input_ring = 64 * 1024;
         private const int header_fixed = 64;
 
         private const string field_list =
-            "frame[gap_ms:f32,ready_wait_ms:f32,update_wait_ms:f32,draw_ms:f32,swap_ms:f32,gc0:u8];update[frame_ms:f32];second[elapsed_s:f64,alloc_bytes:u64,gc_pause_ms:f64,gen0:u32,gen1:u32,gen2:u32]";
+            "frame[gap_ms:f32,ready_wait_ms:f32,update_wait_ms:f32,draw_ms:f32,swap_ms:f32,gc0:u8];update[frame_ms:f32];second[elapsed_s:f64,alloc_bytes:u64,gc_pause_ms:f64,gen0:u32,gen1:u32,gen2:u32];input[pump_ms:f64,os_to_pump_ms:f32,pump_to_update_ms:f32,update_to_present_ms:f32,kind:u8]";
 
         private static readonly bool enabled = FrameworkEnvironment.FrameStats;
 
@@ -86,6 +97,23 @@ namespace osu.Framework.Platform
 
         private static readonly double ticksToMs = 1000.0 / Stopwatch.Frequency;
 
+        // Update frame index of the frame stored in each of the three draw-root buffers (written by the update thread, read by the draw thread after it gets that buffer).
+        private static readonly int[] bufferUpdate = { -1, -1, -1 };
+
+        // Update frame index drawn by each recorded draw frame (parallel to the frame columns).
+        private static readonly int[]? drawnUpdate = enabled ? new int[capacity] : null;
+
+        // Offset that turns SDL_GetTicksNS() (nanoseconds) into Stopwatch ticks. SDL's clock is QueryPerformanceCounter based, so it is constant.
+        private static readonly long sdlToStopwatchTicks = enabled ? measureSdlOffset() : 0;
+
+        // Lane 0 = keyboard handler, lane 1 = mouse handler. Each lane is fed by the input thread and drained by the update thread.
+        private static readonly InputLane[]? lanes = enabled ? new[] { new InputLane(key_input_capacity), new InputLane(mouse_input_capacity) } : null;
+
+        // Input thread only: the SDL event being handled right now.
+        private static ulong eventOsNs;
+        private static long eventPump;
+        private static bool eventRepeat;
+
         // Written by the update thread (Begin/End), read by the draw thread.
         private static volatile bool recording;
         private static int session;
@@ -108,6 +136,7 @@ namespace osu.Framework.Platform
         // Marker: written by any thread (first call wins), reset by Begin.
         private static int firstObjectFrame = -1;
         private static int firstObjectUpdate = -1;
+        private static long firstObjectTicks;
 
         // Update thread only.
         private static bool open;
@@ -126,6 +155,13 @@ namespace osu.Framework.Platform
         private static int beginGcCount, endGcCount;
         private static string gcReasonsLine = string.Empty;
         private static string gen0SizeLine = string.Empty;
+        private static string inputLine = string.Empty;
+
+        // Input rows merged from both lanes by the finishing task.
+        private static double[]? inPumpMs;
+        private static float[]? inOsToPump, inPumpToUpdate, inUpdateToPresent;
+        private static byte[]? inKind;
+        private static int inCount;
 
         /// <summary>
         /// The storage the raw files are written to. Set by <see cref="GameHost"/>; falls back to the user's application data folder.
@@ -157,6 +193,10 @@ namespace osu.Framework.Platform
 
             Volatile.Write(ref firstObjectFrame, -1);
             Volatile.Write(ref firstObjectUpdate, -1);
+            Volatile.Write(ref firstObjectTicks, 0);
+
+            foreach (var lane in lanes!)
+                lane.Reset();
 
             beginGcCount = GC.CollectionCount(0);
             GCReasonListener.Begin();
@@ -195,7 +235,10 @@ namespace osu.Framework.Platform
             int frame = Volatile.Read(ref seenSession) == Volatile.Read(ref session) ? Volatile.Read(ref count) : 0;
 
             if (Interlocked.CompareExchange(ref firstObjectFrame, frame, -1) == -1)
+            {
                 Volatile.Write(ref firstObjectUpdate, updateCount);
+                Volatile.Write(ref firstObjectTicks, Stopwatch.GetTimestamp());
+            }
         }
 
         /// <summary>
@@ -276,6 +319,168 @@ namespace osu.Framework.Platform
         }
 
         /// <summary>
+        /// Called on the update thread when it stores a new draw root, with the index of the buffer it wrote.
+        /// </summary>
+        internal static void BufferWritten(int bufferIndex) => bufferUpdate[bufferIndex] = open && updateStarted && !updateFull ? updateCount : -1;
+
+        /// <summary>
+        /// Called on the input thread at the start of handling a key, mouse button or mouse motion event, with the event's SDL timestamp (nanoseconds).
+        /// </summary>
+        internal static void SetInputEvent(ulong sdlTimestampNs, bool keyRepeat = false)
+        {
+            eventOsNs = sdlTimestampNs;
+            eventRepeat = keyRepeat;
+            eventPump = Stopwatch.GetTimestamp();
+        }
+
+        /// <summary>
+        /// Called on the input thread when the event handling has finished.
+        /// </summary>
+        internal static void ClearInputEvent()
+        {
+            eventPump = 0;
+            eventRepeat = false;
+        }
+
+        /// <summary>
+        /// Called on the input thread by an input handler just before it enqueues an input (so the record exists before the update thread can dequeue it).
+        /// </summary>
+        /// <param name="lane">0 for the keyboard handler, 1 for the mouse handler.</param>
+        /// <param name="kind">0 key down, 1 key up, 2 mouse button down, 3 mouse button up, 4 mouse move, 255 not measured (still counted).</param>
+        internal static void InputEnqueued(int lane, byte kind)
+        {
+            long pump = eventPump;
+            float osToPump = float.NaN;
+
+            // OS key repeats are not new presses.
+            if (eventRepeat && pump != 0)
+                kind = 255;
+
+            if (pump != 0)
+            {
+                if (eventOsNs != 0)
+                    osToPump = (float)((pump - ((long)(eventOsNs * (Stopwatch.Frequency / 1e9)) + sdlToStopwatchTicks)) * ticksToMs);
+            }
+            else
+                pump = Stopwatch.GetTimestamp();
+
+            lanes![lane].Enqueue(pump, osToPump, kind);
+        }
+
+        /// <summary>
+        /// Called on the update thread after an input handler handed <paramref name="count"/> inputs to the input manager.
+        /// </summary>
+        internal static void InputsConsumed(int lane, int count)
+        {
+            if (count == 0) return;
+
+            lanes![lane].Consume(count, open && updateStarted && !updateFull, updateCount);
+        }
+
+        private static long measureSdlOffset()
+        {
+            // The pair with the smallest gap between the two reads is the most accurate one.
+            long bestGap = long.MaxValue, offset = 0;
+
+            for (int i = 0; i < 2000; i++)
+            {
+                long a = Stopwatch.GetTimestamp();
+                ulong ns = SDL_GetTicksNS();
+                long b = Stopwatch.GetTimestamp();
+
+                if (b - a < bestGap)
+                {
+                    bestGap = b - a;
+                    offset = a + (b - a) / 2 - (long)(ns * (Stopwatch.Frequency / 1e9));
+                }
+            }
+
+            return offset;
+        }
+
+        private sealed class InputLane
+        {
+            // Ring of events the input thread has handled (index = sequence & mask). Sequence numbers match the handler's queue order.
+            private readonly long[] ringPump = new long[input_ring];
+            private readonly float[] ringOs = new float[input_ring];
+            private readonly byte[] ringKind = new byte[input_ring];
+            private long produced;
+            private long consumed;
+
+            // Recorded session rows (update thread), in consumption order.
+            public readonly long[] Pump, Update;
+            public readonly float[] OsToPump;
+            public readonly int[] UpdateFrame;
+            public readonly byte[] Kind;
+            public int Count;
+            public bool Full, Lost;
+
+            public InputLane(int capacity)
+            {
+                Pump = new long[capacity];
+                Update = new long[capacity];
+                OsToPump = new float[capacity];
+                UpdateFrame = new int[capacity];
+                Kind = new byte[capacity];
+            }
+
+            public void Reset()
+            {
+                Count = 0;
+                Full = Lost = false;
+            }
+
+            public void Enqueue(long pump, float osToPump, byte kind)
+            {
+                long seq = produced;
+                int i = (int)(seq & (input_ring - 1));
+                ringPump[i] = pump;
+                ringOs[i] = osToPump;
+                ringKind[i] = kind;
+                Volatile.Write(ref produced, seq + 1);
+            }
+
+            public void Consume(int count, bool record, int updateFrame)
+            {
+                long first = consumed;
+                long available = Volatile.Read(ref produced);
+                consumed = first + count;
+
+                if (!record) return;
+
+                long now = Stopwatch.GetTimestamp();
+                long end = Math.Min(first + count, available);
+
+                for (long s = first; s < end; s++)
+                {
+                    if (available - s > input_ring)
+                    {
+                        // The input thread has already reused this slot.
+                        Lost = true;
+                        continue;
+                    }
+
+                    int i = (int)(s & (input_ring - 1));
+                    byte kind = ringKind[i];
+                    if (kind == 255) continue;
+
+                    if (Count >= Pump.Length)
+                    {
+                        Full = true;
+                        return;
+                    }
+
+                    int r = Count++;
+                    Pump[r] = ringPump[i];
+                    OsToPump[r] = ringOs[i];
+                    Kind[r] = kind;
+                    Update[r] = now;
+                    UpdateFrame[r] = updateFrame;
+                }
+            }
+        }
+
+        /// <summary>
         /// Called on the draw thread after the frame-ready wait and the wait for the update thread. Accumulates until the next present.
         /// </summary>
         internal static void AddWaits(long readyTicks, long readTicks)
@@ -290,7 +495,8 @@ namespace osu.Framework.Platform
         /// <param name="now">The timestamp taken right after the swap.</param>
         /// <param name="drawTicks">Time from the end of the wait for the update thread to the start of the swap.</param>
         /// <param name="swapTicks">Time spent in the swap.</param>
-        internal static void Presented(long now, long drawTicks, long swapTicks)
+        /// <param name="bufferIndex">The index of the draw-root buffer that was drawn.</param>
+        internal static void Presented(long now, long drawTicks, long swapTicks, int bufferIndex)
         {
             if (!recording)
             {
@@ -333,6 +539,7 @@ namespace osu.Framework.Platform
                         drawMs![i] = (float)(drawTicks * ticksToMs);
                         swapMs![i] = (float)(swapTicks * ticksToMs);
                         gcFlag![i] = gc0 != lastGc0 ? (byte)1 : (byte)0;
+                        drawnUpdate![i] = bufferUpdate[bufferIndex];
                         Volatile.Write(ref count, i + 1);
                     }
                     else
@@ -376,9 +583,11 @@ namespace osu.Framework.Platform
                 if (firstFrame >= n) firstFrame = -1;
 
                 string line = summarise(n, firstFrame, full);
+                buildInputs(n);
                 Logger.Log(line);
                 Logger.Log(gcReasonsLine);
                 Logger.Log(gen0SizeLine);
+                Logger.Log(inputLine);
                 write(n, firstFrame, line);
             }
             catch (Exception e)
@@ -437,6 +646,147 @@ namespace osu.Framework.Platform
                 line += " (buffer full, recording stopped early)";
 
             return line;
+        }
+
+        private static void buildInputs(int n)
+        {
+            int total = 0;
+            foreach (var lane in lanes!)
+                total += lane.Count;
+
+            inCount = total;
+            inPumpMs = new double[total];
+            inOsToPump = new float[total];
+            inPumpToUpdate = new float[total];
+            inUpdateToPresent = new float[total];
+            inKind = new byte[total];
+
+            // Present time of draw frame k = sum of gap_ms[0..k] after the draw origin.
+            double[] presentMs = new double[n];
+            double acc = 0;
+
+            for (int k = 0; k < n; k++)
+            {
+                acc += gapMs![k];
+                presentMs[k] = acc;
+            }
+
+            int o = 0;
+
+            foreach (var lane in lanes)
+            {
+                for (int r = 0; r < lane.Count; r++, o++)
+                {
+                    inPumpMs[o] = (lane.Pump[r] - drawOrigin) * ticksToMs;
+                    inOsToPump[o] = lane.OsToPump[r];
+                    inPumpToUpdate[o] = (float)((lane.Update[r] - lane.Pump[r]) * ticksToMs);
+                    inKind[o] = lane.Kind[r];
+
+                    // First draw frame that drew this update frame or a later one (the input was applied before that frame's draw nodes were built).
+                    int j = lane.UpdateFrame[r];
+                    int lo = 0, hi = n;
+
+                    while (lo < hi)
+                    {
+                        int mid = (lo + hi) >> 1;
+                        if (drawnUpdate![mid] >= j) hi = mid;
+                        else lo = mid + 1;
+                    }
+
+                    inUpdateToPresent[o] = lo < n ? (float)(presentMs[lo] - (lane.Update[r] - drawOrigin) * ticksToMs) : float.NaN;
+                }
+            }
+
+            inputLine = summariseInputs();
+        }
+
+        private static string summariseInputs()
+        {
+            if (inCount == 0)
+                return "[inputdelay] no inputs recorded";
+
+            long firstTicks = Volatile.Read(ref firstObjectTicks);
+            double firstMs = firstTicks != 0 ? (firstTicks - drawOrigin) * ticksToMs : double.NaN;
+            var sb = new StringBuilder("[inputdelay] ms; os = SDL event timestamp, pump = input thread, update = update thread consumed it, present = end of the first swap drawing that update frame");
+
+            if (!double.IsNaN(firstMs))
+                appendInputGroups(sb, "from first object", firstMs);
+            else
+                sb.Append(" | first object not marked");
+
+            appendInputGroups(sb, "whole session", double.NegativeInfinity);
+
+            foreach (var lane in lanes!)
+            {
+                if (lane.Full) sb.Append(" (input buffer full, recording stopped early)");
+                if (lane.Lost) sb.Append(" (some inputs were lost before the update thread consumed them)");
+            }
+
+            return sb.ToString();
+        }
+
+        private static void appendInputGroups(StringBuilder sb, string title, double fromMs)
+        {
+            sb.Append(" | ").Append(title).Append(':');
+            appendInputGroup(sb, "keys+buttons", fromMs, false);
+            appendInputGroup(sb, "mouse move", fromMs, true);
+        }
+
+        private static void appendInputGroup(StringBuilder sb, string name, double fromMs, bool mouseMove)
+        {
+            var osPump = new List<float>();
+            var pumpUpdate = new List<float>();
+            var osUpdate = new List<float>();
+            var osPresent = new List<float>();
+            var updatePresent = new List<float>();
+            int count = 0;
+
+            for (int i = 0; i < inCount; i++)
+            {
+                if ((inKind![i] == 4) != mouseMove) continue;
+                if (inPumpMs![i] + inPumpToUpdate![i] < fromMs) continue;
+
+                count++;
+                pumpUpdate.Add(inPumpToUpdate[i]);
+
+                if (!float.IsNaN(inOsToPump![i]))
+                {
+                    osPump.Add(inOsToPump[i]);
+                    osUpdate.Add(inOsToPump[i] + inPumpToUpdate[i]);
+
+                    if (!float.IsNaN(inUpdateToPresent![i]))
+                        osPresent.Add(inOsToPump[i] + inPumpToUpdate[i] + inUpdateToPresent[i]);
+                }
+
+                if (!float.IsNaN(inUpdateToPresent![i]))
+                    updatePresent.Add(inUpdateToPresent[i]);
+            }
+
+            sb.Append(" [").Append(name).Append(" n=").Append(count.ToString(CultureInfo.InvariantCulture)).Append(']');
+            appendMetric(sb, "os->pump", osPump);
+            appendMetric(sb, "pump->update", pumpUpdate);
+            appendMetric(sb, "os->update", osUpdate);
+            appendMetric(sb, "os->present", osPresent);
+            appendMetric(sb, "update->present", updatePresent);
+        }
+
+        private static void appendMetric(StringBuilder sb, string name, List<float> values)
+        {
+            var c = CultureInfo.InvariantCulture;
+            sb.Append(' ').Append(name).Append(' ');
+
+            if (values.Count == 0)
+            {
+                sb.Append("n/a;");
+                return;
+            }
+
+            values.Sort();
+            double sum = 0;
+            foreach (float f in values)
+                sum += f;
+
+            sb.Append(string.Create(c, $"mean {sum / values.Count:F3} p50 {values[(values.Count - 1) / 2]:F3} p99 {values[Math.Max(0, (int)Math.Ceiling(0.99 * values.Count) - 1)]:F3} max {values[^1]:F3};"));
         }
 
         private static string gen0Summary()
@@ -504,11 +854,17 @@ namespace osu.Framework.Platform
             // Update frame 0 starts at (updateOrigin - drawOrigin); both are Stopwatch timestamps.
             double offsetMs = (updateOrigin - drawOrigin) * ticksToMs;
             uint flags = (full ? 1u : 0u) | (updateFull ? 2u : 0u);
+            uint inputFlags = 0;
+            foreach (var lane in lanes!)
+                inputFlags |= (lane.Full ? 1u : 0u) | (lane.Lost ? 2u : 0u);
+
+            long firstTicks = Volatile.Read(ref firstObjectTicks);
+            double firstObjectMs = firstTicks != 0 ? (firstTicks - drawOrigin) * ticksToMs : -1;
             int firstUpdate = Volatile.Read(ref firstObjectUpdate);
 
             byte[] header = new byte[headerSize];
             Encoding.ASCII.GetBytes("OSUFRMST").CopyTo(header, 0);
-            BitConverter.TryWriteBytes(header.AsSpan(8), 2u);
+            BitConverter.TryWriteBytes(header.AsSpan(8), 3u);
             BitConverter.TryWriteBytes(header.AsSpan(12), (uint)headerSize);
             BitConverter.TryWriteBytes(header.AsSpan(16), (uint)n);
             BitConverter.TryWriteBytes(header.AsSpan(20), (uint)u);
@@ -517,6 +873,9 @@ namespace osu.Framework.Platform
             BitConverter.TryWriteBytes(header.AsSpan(32), firstFrame >= 0 && firstUpdate >= 0 && firstUpdate <= u ? firstUpdate : -1);
             BitConverter.TryWriteBytes(header.AsSpan(36), flags);
             BitConverter.TryWriteBytes(header.AsSpan(40), offsetMs);
+            BitConverter.TryWriteBytes(header.AsSpan(48), (uint)inCount);
+            BitConverter.TryWriteBytes(header.AsSpan(52), inputFlags);
+            BitConverter.TryWriteBytes(header.AsSpan(56), firstObjectMs);
             BitConverter.TryWriteBytes(header.AsSpan(header_fixed), (uint)list.Length);
             list.CopyTo(header, header_fixed + 4);
             s.Write(header, 0, header.Length);
@@ -534,6 +893,11 @@ namespace osu.Framework.Platform
             s.Write(MemoryMarshal.AsBytes(secGen0.AsSpan(0, sec)));
             s.Write(MemoryMarshal.AsBytes(secGen1.AsSpan(0, sec)));
             s.Write(MemoryMarshal.AsBytes(secGen2.AsSpan(0, sec)));
+            s.Write(MemoryMarshal.AsBytes(inPumpMs.AsSpan(0, inCount)));
+            s.Write(MemoryMarshal.AsBytes(inOsToPump.AsSpan(0, inCount)));
+            s.Write(MemoryMarshal.AsBytes(inPumpToUpdate.AsSpan(0, inCount)));
+            s.Write(MemoryMarshal.AsBytes(inUpdateToPresent.AsSpan(0, inCount)));
+            s.Write(inKind.AsSpan(0, inCount));
         }
 
         private static void writeTxt(StreamWriter w, string line)
@@ -542,6 +906,7 @@ namespace osu.Framework.Platform
             w.WriteLine(line);
             w.WriteLine(gcReasonsLine);
             w.WriteLine(gen0SizeLine);
+            w.WriteLine(inputLine);
             w.WriteLine("per second (deltas): elapsed_s alloc_MB gc_pause_ms gen0 gen1 gen2 gen0_before_KB gen0_after_KB");
 
             for (int i = 0; i < secCount; i++)

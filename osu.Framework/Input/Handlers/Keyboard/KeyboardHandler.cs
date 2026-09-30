@@ -1,6 +1,7 @@
 ﻿// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
+using System.Collections.Generic;
 using osu.Framework.Input.StateChanges;
 using osu.Framework.Platform;
 using osu.Framework.Statistics;
@@ -41,15 +42,27 @@ namespace osu.Framework.Input.Handlers.Keyboard
             return true;
         }
 
-        private void enqueueInput(IInput input)
+        public override void CollectPendingInputs(List<IInput> inputs)
         {
+            int before = inputs.Count;
+            base.CollectPendingInputs(inputs);
+
+            if (FrameStats.Enabled)
+                FrameStats.InputsConsumed(0, inputs.Count - before);
+        }
+
+        private void enqueueInput(IInput input, byte frameStatsKind)
+        {
+            if (FrameStats.Enabled)
+                FrameStats.InputEnqueued(0, frameStatsKind);
+
             PendingInputs.Enqueue(input);
             FrameStatistics.Increment(StatisticsCounterType.KeyEvents);
             statistic_total_events.Value++;
         }
 
-        private void handleKeyDown(TKKey key) => enqueueInput(new KeyboardKeyInput(key, true));
+        private void handleKeyDown(TKKey key) => enqueueInput(new KeyboardKeyInput(key, true), 0);
 
-        private void handleKeyUp(TKKey key) => enqueueInput(new KeyboardKeyInput(key, false));
+        private void handleKeyUp(TKKey key) => enqueueInput(new KeyboardKeyInput(key, false), 1);
     }
 }

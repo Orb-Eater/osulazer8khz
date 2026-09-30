@@ -475,6 +475,9 @@ namespace osu.Framework.Platform.SDL3
 
         private void handleMouseButtonEvent(SDL_MouseButtonEvent evtButton)
         {
+            if (FrameStats.Enabled)
+                FrameStats.SetInputEvent(evtButton.timestamp);
+
             MouseButton button = mouseButtonFromEvent(evtButton.Button);
             SDL_MouseButtonFlags mask = SDL_BUTTON(evtButton.Button);
             Debug.Assert(Enum.IsDefined(mask));
@@ -491,14 +494,23 @@ namespace osu.Framework.Platform.SDL3
                     MouseUp?.Invoke(button);
                     break;
             }
+
+            if (FrameStats.Enabled)
+                FrameStats.ClearInputEvent();
         }
 
         private void handleMouseMotionEvent(SDL_MouseMotionEvent evtMotion)
         {
+            if (FrameStats.Enabled)
+                FrameStats.SetInputEvent(evtMotion.timestamp);
+
             if (!SDL_GetWindowRelativeMouseMode(SDLWindowHandle))
                 MouseMove?.Invoke(new Vector2(evtMotion.x * Scale, evtMotion.y * Scale));
             else
                 MouseMoveRelative?.Invoke(new Vector2(evtMotion.xrel * Scale, evtMotion.yrel * Scale));
+
+            if (FrameStats.Enabled)
+                FrameStats.ClearInputEvent();
         }
 
         private void handleTextInputEvent(SDL_TextInputEvent evtText)
@@ -525,6 +537,9 @@ namespace osu.Framework.Platform.SDL3
                 return;
             }
 
+            if (FrameStats.Enabled)
+                FrameStats.SetInputEvent(evtKey.timestamp, evtKey.repeat);
+
             switch (evtKey.type)
             {
                 case SDL_EventType.SDL_EVENT_KEY_DOWN:
@@ -535,6 +550,9 @@ namespace osu.Framework.Platform.SDL3
                     KeyUp?.Invoke(key);
                     break;
             }
+
+            if (FrameStats.Enabled)
+                FrameStats.ClearInputEvent();
         }
 
         private void handleKeymapChangedEvent() => KeymapChanged?.Invoke();

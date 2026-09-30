@@ -497,7 +497,12 @@ namespace osu.Framework.Platform
             Root.UpdateSubTreeMasking();
 
             using (var buffer = drawRoots.GetForWrite())
+            {
                 buffer.Object = Root.GenerateDrawNodeSubtree(frameCount, buffer.Index, false);
+
+                if (FrameStats.Enabled)
+                    FrameStats.BufferWritten(buffer.Index);
+            }
         }
 
         private bool didRenderFrame;
@@ -594,7 +599,7 @@ namespace osu.Framework.Platform
                     long swapEnd = FrameSpikeLog.Now;
 
                     if (FrameStats.Enabled)
-                        FrameStats.Presented(swapEnd, swapStart - drawStart, swapEnd - swapStart);
+                        FrameStats.Presented(swapEnd, swapStart - drawStart, swapEnd - swapStart, buffer.Index);
 
                     if (spikeLog != null)
                     {
