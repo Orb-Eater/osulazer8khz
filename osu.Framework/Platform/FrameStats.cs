@@ -179,6 +179,13 @@ namespace osu.Framework.Platform
         internal static Storage? Storage { get; set; }
 
         /// <summary>
+        /// Describes the host's window, renderer and frame-sync state for the <c>[config]</c> line. Set by <see cref="GameHost"/>; called once per session from <see cref="Begin"/>.
+        /// </summary>
+        internal static Func<string>? HostDescriber { get; set; }
+
+        private static string configLine = string.Empty;
+
+        /// <summary>
         /// Whether frame stats are enabled (<c>OSU_FRAME_STATS</c>).
         /// </summary>
         public static bool Enabled => enabled;
@@ -208,6 +215,7 @@ namespace osu.Framework.Platform
             foreach (var lane in lanes!)
                 lane.Reset();
 
+            configLine = buildConfigLine();
             beginGcCount = GC.CollectionCount(0);
             GCReasonListener.Begin();
 
@@ -582,6 +590,71 @@ namespace osu.Framework.Platform
             }
         }
 
+        // Environment variables written to the [config] line when set. A fixed list on purpose: never other DOTNET_* variables (they can hold paths).
+        private static readonly string[] config_env =
+        {
+            "OSU_EXECUTION_MODE", "OSU_INPUT_HZ", "OSU_SPIKE_LOG_MS", "OSU_FRAME_STATS", "OSU_MAX_SANE_HZ", "OSU_COALESCE_MOUSE",
+            "OSU_RAW_KEYBOARD", "OSU_SPIN_PAUSE", "OSU_GC_MODE", "OSU_GC_COLLECT_AT_START", "OSU_NOGC_MB", "OSU_EXTERNAL_UPDATE_PROVIDER",
+            "OSU_GRAPHICS_SURFACE", "OSU_GRAPHICS_RENDERER", "OSU_GRAPHICS_VBO_COUNT", "OSU_GRAPHICS_STAGING_BUFFER_TYPE", "OSU_GRAPHICS_NO_SSBO",
+            "OSU_SDL3", "DOTNET_gcServer", "DOTNET_GCgen0size", "DOTNET_GCgen0MaxBudget", "DOTNET_GCConserveMemory", "DOTNET_GCHeapCount",
+            "DOTNET_TieredPGO", "DOTNET_TieredCompilation", "DOTNET_TC_QuickJitForLoops", "DOTNET_ReadyToRun", "DOTNET_TC_BackgroundWorkerTimeoutMs"
+        };
+
+        /// <summary>
+        /// One line naming the build and configuration of this session, so a recorded file identifies itself. Once per session (update thread), never per frame.
+        /// Contains no paths, names, or machine or adapter identifiers.
+        /// </summary>
+        private static string buildConfigLine()
+        {
+            var sb = new StringBuilder("[config] ");
+
+            sb.Append("env:");
+            bool any = false;
+
+            foreach (string name in config_env)
+            {
+                string? value = Environment.GetEnvironmentVariable(name);
+                if (value == null) continue;
+
+                sb.Append(' ').Append(name).Append('=').Append(value.Length > 32 ? value.Substring(0, 32) : value);
+                any = true;
+            }
+
+            if (!any) sb.Append(" (none)");
+
+            sb.Append(" | framework ").Append(buildId(typeof(FrameStats).Assembly));
+            sb.Append(" | game ").Append(buildId(RuntimeInfo.EntryAssembly));
+            sb.Append(" | ").Append(RuntimeInformation.FrameworkDescription);
+            sb.Append(", ").Append(Environment.ProcessorCount).Append(" cores, server GC ").Append(System.Runtime.GCSettings.IsServerGC ? "on" : "off");
+
+            string host;
+
+            try
+            {
+                host = HostDescriber?.Invoke() ?? "host n/a";
+            }
+            catch (Exception e)
+            {
+                host = "host n/a (" + e.GetType().Name + ")";
+            }
+
+            sb.Append(" | ").Append(host);
+            return sb.ToString();
+        }
+
+        private static string buildId(System.Reflection.Assembly? assembly)
+        {
+            string? v = assembly?.GetCustomAttributes(typeof(System.Reflection.AssemblyInformationalVersionAttribute), false) is { Length: > 0 } a
+                ? ((System.Reflection.AssemblyInformationalVersionAttribute)a[0]).InformationalVersion
+                : null;
+
+            if (v == null) return "unknown";
+
+            // "1.0.0+<40-char commit>": keep the version and a short commit.
+            int plus = v.IndexOf('+');
+            return plus >= 0 && v.Length > plus + 8 ? v.Substring(0, plus + 8) : v;
+        }
+
         private static void finish()
         {
             try
@@ -610,6 +683,7 @@ namespace osu.Framework.Platform
 
                 string line = summarise(n, firstFrame, full);
                 buildInputs(n);
+                Logger.Log(configLine);
                 Logger.Log(line);
                 Logger.Log(gcReasonsLine);
                 Logger.Log(gen0SizeLine);
@@ -1008,6 +1082,7 @@ namespace osu.Framework.Platform
         private static void writeTxt(StreamWriter w, string line)
         {
             var c = CultureInfo.InvariantCulture;
+            w.WriteLine(configLine);
             w.WriteLine(line);
             w.WriteLine(gcReasonsLine);
             w.WriteLine(gen0SizeLine);

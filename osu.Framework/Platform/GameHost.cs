@@ -1195,7 +1195,18 @@ namespace osu.Framework.Platform
             Logger.Enabled = true;
 
             if (FrameStats.Enabled)
+            {
                 FrameStats.Storage = Storage.GetStorageForDirectory("framestats");
+                FrameStats.HostDescriber = describeForFrameStats;
+            }
+        }
+
+        private string describeForFrameStats()
+        {
+            var mode = Window?.CurrentDisplayMode.Value;
+            var size = Window?.ClientSize;
+
+            return $"renderer {ResolvedRenderer}, window {windowMode?.Value}, sync {frameSyncMode?.Value}, client {size?.Width}x{size?.Height}, display {mode?.Size.Width}x{mode?.Size.Height}@{(mode != null ? MathF.Round(mode.Value.RefreshRate) : 0)}";
         }
 
         private void populateInputHandlers()
