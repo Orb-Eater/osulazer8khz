@@ -1,0 +1,7 @@
+----------------------------------------------------------
+database Log (LogLevel: Verbose)
+Running osu-8k 0.0.0.0 on .NET 10.0.5
+Environment: Windows (Microsoft Windows NT 10.0.26200.0), 32 cores 
+----------------------------------------------------------
+2026-09-30 21:53:44 [verbose]: [?????] Beginning import from replay.osr...
+2026-09-30 21:53:44 [verbose]: [6a79c] Import successfully completed!
