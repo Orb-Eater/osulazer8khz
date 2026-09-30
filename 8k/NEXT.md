@@ -100,7 +100,13 @@ Done and pushed (`8k-next` head after this note, `8k-next-framework` `9fe82f2`):
 - Round F planned and built (`1-test.bat`, `2-test.bat`; neutral names at the owner's request, mapping in `PLAN-lows.md`,
   "Plan Round F"): does the Step E recorder cost fps?
 
-**Open problem to resolve first:** round E fps is ~2,160 (2,458 overlay off), 1% low ~700, draw+swap ~0.48 ms, against ~5,900 /
+**Round F came back (2026-09-30, later; see `PLAN-lows.md` "Step F results").** The recorder is NOT the cause: a run with the full
+recorder on gave ~6,070 fps, 1% low 1,782, draw+swap 0.17 ms (round D's numbers). The other file had raw keyboard + an Interactive-style
+GC on (it matches the retired round E launcher 4), so a stale launcher was probably run, and no `2-test.bat` (no recorder) file came
+back. The same config is ~2,160 fps in round E and ~6,070 in round F: cause unknown. Pen os->present is 0.64 ms in the fast state.
+Next, awaiting the owner: confirm which launcher made which file; yes/no on a `[config]` line in the recorder output (see "Open after round F").
+
+**Older open problem (now narrowed by round F):** round E fps is ~2,160 (2,458 overlay off), 1% low ~700, draw+swap ~0.48 ms, against ~5,900 /
 1,500-2,200 / ~0.16 ms in round D. The owner says map and settings were the same. Waiting on round F: `2-test.bat` (no recorder)
 ~5,900 fps = the recorder costs fps, fix that first; still ~2,200-2,500 = look elsewhere (game build, framework changes
 between rounds; do not guess at Windows/driver causes, see the rules).

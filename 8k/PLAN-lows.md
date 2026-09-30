@@ -361,3 +361,50 @@ neutrally at the owner's request (`N-test.bat`); the mapping is this table. Over
 | 2 | `2-test.bat` | `OSU_FRAME_STATS` removed (no recorder); measure with CapFrameX |
 Reading: if 2 is also ~2,1xx-2,4xx fps, the recorder is not the cause (look at the environment / game build); if it is near
 5,900, the recorder costs fps and gets fixed first. The round E launchers (`1-baseline`..`4-rawkeyboard-interactive`) are removed.
+
+## Step F results (2026-09-30, round F: two runs, same map, overlay off; only the `[framestats]`/`[inputdelay]` text, not the `.bin`)
+
+The owner sent two recorder outputs, named "test1" (played first) and "test2" (played second). **Neither matches its launcher as
+committed.** `1-test.bat` sets no `OSU_GC_MODE` and no `OSU_RAW_KEYBOARD`; `2-test.bat` has no recorder, so it cannot produce a
+`[framestats]` line at all. What the files themselves show (the config is not written into the log, so this is inferred):
+- "test1": keys os->pump 0.24 ms (real stamps = raw keyboard was on), 73 GCs with gen0 ~18 MB (an Interactive-style GC mode).
+  That is round E launcher 4 (raw keyboard + Interactive: 0.24 / 73 GCs / 2,194 fps). Probably a stale round E launcher was run.
+- "test2": keys os->pump 8.5 ms (old stamps), 5,867 GCs with gen0 256 KB (upstream LowLatency), recorder on. That is what
+  `1-test.bat` should give, and it reproduces round D's baseline.
+- No run of `2-test.bat` (no recorder) came back. Not yet known whether it was played.
+From first object; delays in ms. Pen = the tablet cursor path.
+| | "test1" (raw kbd + Interactive-style GC) | "test2" (baseline config) | round D baseline 1b | round E run 4 (raw + Interactive) |
+|---|---|---|---|---|
+| avg fps | 2,194 | **6,073** | 5,902 | 2,194 |
+| 1% low / 0.1% low | 692 / 464 | **1,782 / 1,057** | 1,764 / 1,111 | 692 / 464 |
+| max ms / >2 ms / >5 ms | 13.2 / 91 / 4 | 14.8 / 7 / 3 | 4.0 / 2 / - | 13.2 / 91 / - |
+| GCs (whole session) | 73 | 5,867 | 5,270 | 73 |
+| keys os->pump mean | 0.244 | 8.53 (old stamps) | ~8.3 | 0.24 |
+| keys pump->update mean | 0.070 | 0.070 | 0.067 | 0.066 |
+| keys update->present mean / p99 | 1.10 / 2.26 | **0.68 / 1.49** | 0.66 / 1.51 | - |
+| pen os->present mean / p99 | 1.19 / 2.28 | **0.64 / 1.22** | not measured | 1.19 / 2.28 |
+| pen update(consume->publish) mean | 0.138 | 0.146 | - | 0.14 |
+| pen queue (publish->draw start) mean / p99 | 0.33 / 1.12 | **0.08 / 0.23** | - | 0.33 |
+| pen draw+swap mean | 0.47 | **0.17** | - | 0.47-0.49 |
+| frame age at present mean / p99 | 0.64 / 1.50 | **0.36 / 0.76** | - | 0.65 |
+
+- **The recorder is not the cause of the fps drop.** "test2" has the full Step E recorder (pen lane, per-buffer publish time,
+  `.bin` v4) on and runs at 6,073 fps, 1% low 1,782, draw+swap 0.17 ms: round D's numbers. The 2,1xx-fps state therefore is not
+  caused by the recorder, and not by raw keyboard or GC mode either (round E had it in all five runs, including the plain baseline).
+- Same build, same map, same settings, and the baseline config gives ~2,160 fps in round E and ~6,070 in round F. What differs
+  between the two states is draw+swap (0.47 vs 0.17 ms) and through it the queue (0.33 vs 0.08); update-side numbers are equal.
+  The log does not say why. Not guessed at (rules: no Windows/driver suggestions).
+- E3 in the fast state (pen move, mean): update 0.146 + queue 0.079 + draw+swap 0.166 = 0.39 = update->present 0.391. The earlier
+  "unexplained 0.2 ms" is gone: it was the slow state's heavier draw. Queue is now only 0.08 ms, so candidate P1 (est. gain
+  0.03-0.05 ms on the queue) is worth little; the parts left are update after dequeue (0.15) and draw+swap (0.17).
+- Pen os->present is 0.64 ms mean, 1.22 ms p99 in the fast state. Keys (old stamps) os->present is not meaningful.
+- Both runs still contain one ~13-15 ms stall in the update thread (keys/pen update(consume->publish) max 13.4-14.4 ms, pump->update
+  pen max 12.6 ms), as in every earlier round. Not explained.
+- What the owner felt: not yet reported.
+
+### Open after round F
+1. Which launcher produced each file, and whether `2-test.bat` was played (owner to confirm).
+2. Why the same config is 2,160 fps in one session and 6,070 in another. To find out without guessing, the log needs to say what
+   state each run was in. Proposed (needs the owner's yes, not in "Agreed next steps"): write one `[config]` line at the start of
+   the recorder's output with the active `OSU_*` variables, the game and framework commit, and the renderer, window mode and
+   size, so every file identifies itself.
