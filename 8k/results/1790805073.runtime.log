@@ -1,0 +1,398 @@
+----------------------------------------------------------
+runtime Log (LogLevel: Verbose)
+Running osu-8k 0.0.0.0 on .NET 10.0.5
+Environment: Windows (Microsoft Windows NT 10.0.26200.0), 32 cores 
+----------------------------------------------------------
+2026-09-30 21:51:13 [verbose]: Updates are being managed by an external provider. Skipping Velopack setup.
+2026-09-30 21:51:13 [verbose]: [NVAPI] Threaded optimizations set to "OGL_THREAD_CONTROL_DEFAULT"!
+2026-09-30 21:51:13 [verbose]: Starting legacy IPC provider...
+2026-09-30 21:51:14 [verbose]: 🖼️ Configuration renderer choice: Automatic
+2026-09-30 21:51:14 [verbose]: 🖼️ Renderer fallback order: [ Direct3D 11, Direct3D 11 (Experimental), OpenGL, Vulkan (Experimental) ]
+2026-09-30 21:51:14 [verbose]: 🖼️ Initialising "Veldrid" renderer with "Direct3D11" surface
+2026-09-30 21:51:14 [verbose]: SDL3 Initialized
+2026-09-30 21:51:14 [verbose]: SDL3 Version: 3.5.0
+2026-09-30 21:51:14 [verbose]: SDL3 Revision: SDL-3.5.0-a8591d9
+2026-09-30 21:51:14 [verbose]: SDL3 Video driver: windows
+2026-09-30 21:51:14 [verbose]: Updated display mode to desktop resolution: 1920x1080@540, SDL_PIXELFORMAT_XRGB8888
+2026-09-30 21:51:14 [verbose]: Direct3D 11 Initialized
+2026-09-30 21:51:14 [verbose]: Direct3D 11 Feature Level:           11.1
+2026-09-30 21:51:14 [verbose]: Direct3D 11 Adapter:                 NVIDIA GeForce RTX 5080
+2026-09-30 21:51:14 [verbose]: Direct3D 11 Dedicated Video Memory:  15977 MB
+2026-09-30 21:51:14 [verbose]: Direct3D 11 Dedicated System Memory: 0 MB
+2026-09-30 21:51:14 [verbose]: Direct3D 11 Shared System Memory:    78447 MB
+2026-09-30 21:51:14 [verbose]: UseStructuredBuffers: True
+2026-09-30 21:51:14 [verbose]: 🖼️ Renderer initialised!
+2026-09-30 21:51:14 [verbose]: Host execution state changed to Running
+2026-09-30 21:51:14 [verbose]: Execution mode changed to MultiThreaded
+2026-09-30 21:51:14 [verbose]: Attempting local BassWasapi initialisation
+2026-09-30 21:51:15 [verbose]: Initialising BassWasapi for device 44...success!
+2026-09-30 21:51:15 [verbose]: 🔈 BASS initialised
+2026-09-30 21:51:15 [verbose]: BASS version:           2.4.17.48
+2026-09-30 21:51:15 [verbose]: BASS FX version:        2.4.12.16
+2026-09-30 21:51:15 [verbose]: BASS MIX version:       2.4.12.10
+2026-09-30 21:51:15 [verbose]: Device:                 Speakers (FiiO K3)
+2026-09-30 21:51:15 [verbose]: Driver:                 {0.0.0.00000000}.{950cc9aa-0593-41a7-b5e4-89a32e0f483f}
+2026-09-30 21:51:15 [verbose]: Device period length:   0
+2026-09-30 21:51:15 [verbose]: Device buffer length:   10 ms
+2026-09-30 21:51:15 [verbose]: Update period:          5 ms
+2026-09-30 21:51:15 [verbose]: Playback buffer length: 100 ms
+2026-09-30 21:51:15 [verbose]: Beginning realm file store cleanup
+2026-09-30 21:51:15 [verbose]: Finished realm file store cleanup (0 of 0 deleted)
+2026-09-30 21:51:15 [verbose]: Opened realm "C:\Users\Toms\AppData\Roaming\osu-8k\client.realm" at version 52
+2026-09-30 21:51:15 [verbose]: 🖍️ Shader Texture2D/Texture loaded from cache!
+2026-09-30 21:51:15 [verbose]: 🖍️ Shader Texture2D/CircularProgress loaded from cache!
+2026-09-30 21:51:15 [verbose]: Updated display mode to fullscreen resolution: 1920x1080@540, SDL_PIXELFORMAT_XRGB8888
+2026-09-30 21:51:15 [verbose]: Loading FPSCounter...
+2026-09-30 21:51:15 [verbose]: Loaded FPSCounter!
+2026-09-30 21:51:15 [verbose]: Loading DevBuildBanner...
+2026-09-30 21:51:15 [verbose]: Texture -'s upload queue is large (100)
+2026-09-30 21:51:15 [verbose]: Loaded DevBuildBanner!
+2026-09-30 21:51:15 [verbose]: Loading OsuLogo...
+2026-09-30 21:51:15 [verbose]: Texture -'s upload queue is large (200)
+2026-09-30 21:51:15 [verbose]: Texture -'s upload queue is large (300)
+2026-09-30 21:51:15 [verbose]: 🖍️ Shader Texture2D/TriangleBorder loaded from cache!
+2026-09-30 21:51:15 [verbose]: Loaded OsuLogo!
+2026-09-30 21:51:15 [verbose]: Loading LocalUserStatisticsProvider...
+2026-09-30 21:51:15 [verbose]: 📺 OsuScreenStack#334(depth:1) loading Loader#123
+2026-09-30 21:51:15 [verbose]: Loaded LocalUserStatisticsProvider!
+2026-09-30 21:51:15 [verbose]: Loading DifficultyRecommender...
+2026-09-30 21:51:15 [verbose]: 📺 OsuScreenStack#334(depth:1) entered Loader#123
+2026-09-30 21:51:15 [verbose]: 🖍️ Shader Texture2D/Blur loaded from cache!
+2026-09-30 21:51:15 [verbose]: 🖍️ Shader Texture3D/Texture loaded from cache!
+2026-09-30 21:51:15 [verbose]: 🖍️ Shader Texture2D/FastCircle loaded from cache!
+2026-09-30 21:51:15 [verbose]: Loaded DifficultyRecommender!
+2026-09-30 21:51:15 [verbose]: Loading UserStatisticsWatcher...
+2026-09-30 21:51:15 [verbose]: 🖍️ Shader Texture2D/ArgonBarPath loaded from cache!
+2026-09-30 21:51:15 [verbose]: 🖍️ Shader Texture2D/ArgonBarPathBackground loaded from cache!
+2026-09-30 21:51:15 [verbose]: 🖍️ Shader Texture2D/SaturationSelectorBackground loaded from cache!
+2026-09-30 21:51:15 [verbose]: 🖍️ Shader Texture2D/HueSelectorBackground loaded from cache!
+2026-09-30 21:51:15 [verbose]: 🖍️ Shader Texture2D/Path loaded from cache!
+2026-09-30 21:51:15 [verbose]: Loaded UserStatisticsWatcher!
+2026-09-30 21:51:15 [verbose]: Loading Toolbar...
+2026-09-30 21:51:15 [verbose]: 🖍️ Shader PathPrepass/PathPrepass loaded from cache!
+2026-09-30 21:51:15 [verbose]: 🖍️ Shader LogoAnimation/LogoAnimation loaded from cache!
+2026-09-30 21:51:15 [verbose]: 🖍️ Shader Texture2D/SpinnerGlow loaded from cache!
+2026-09-30 21:51:15 [verbose]: 🖍️ Shader CursorTrail/Texture loaded from cache!
+2026-09-30 21:51:15 [verbose]: Texture 's upload queue is large (100)
+2026-09-30 21:51:15 [verbose]: Texture 's upload queue is large (200)
+2026-09-30 21:51:15 [verbose]: Texture 's upload queue is large (100)
+2026-09-30 21:51:15 [verbose]: Texture 's upload queue is large (300)
+2026-09-30 21:51:15 [verbose]: Texture 's upload queue is large (400)
+2026-09-30 21:51:15 [verbose]: Loaded Toolbar!
+2026-09-30 21:51:15 [verbose]: Loading VolumeOverlay...
+2026-09-30 21:51:15 [verbose]: 🖍️ Shader Texture2D/Grayscale loaded from cache!
+2026-09-30 21:51:15 [verbose]: Loaded VolumeOverlay!
+2026-09-30 21:51:15 [verbose]: Loading OnScreenDisplay...
+2026-09-30 21:51:15 [verbose]: Loaded OnScreenDisplay!
+2026-09-30 21:51:15 [verbose]: Loading NotificationOverlay...
+2026-09-30 21:51:15 [verbose]: Texture 's upload queue is large (100)
+2026-09-30 21:51:15 [verbose]: Loaded NotificationOverlay!
+2026-09-30 21:51:15 [verbose]: Loading LegacyImportManager...
+2026-09-30 21:51:15 [verbose]: Loaded LegacyImportManager!
+2026-09-30 21:51:15 [verbose]: Loading ScreenshotManager...
+2026-09-30 21:51:15 [verbose]: Loaded ScreenshotManager!
+2026-09-30 21:51:15 [verbose]: Loading NoActionUpdateManager...
+2026-09-30 21:51:15 [verbose]: Loaded NoActionUpdateManager!
+2026-09-30 21:51:15 [verbose]: Loading FirstRunSetupOverlay...
+2026-09-30 21:51:15 [verbose]: This is not an official build of the game. Scores will not be submitted and other online systems may not work as intended.
+2026-09-30 21:51:15 [verbose]: Loaded FirstRunSetupOverlay!
+2026-09-30 21:51:15 [verbose]: Loading ManageCollectionsDialog...
+2026-09-30 21:51:15 [verbose]: Loaded ManageCollectionsDialog!
+2026-09-30 21:51:15 [verbose]: Loading BeatmapListingOverlay...
+2026-09-30 21:51:15 [verbose]: Texture -'s upload queue is large (100)
+2026-09-30 21:51:15 [verbose]: Texture -'s upload queue is large (200)
+2026-09-30 21:51:15 [verbose]: Loaded BeatmapListingOverlay!
+2026-09-30 21:51:15 [verbose]: Loading DashboardOverlay...
+2026-09-30 21:51:15 [verbose]: Loaded DashboardOverlay!
+2026-09-30 21:51:15 [verbose]: Loading NewsOverlay...
+2026-09-30 21:51:15 [verbose]: Texture -'s upload queue is large (300)
+2026-09-30 21:51:15 [verbose]: Loaded NewsOverlay!
+2026-09-30 21:51:15 [verbose]: Loading RankingsOverlay...
+2026-09-30 21:51:15 [verbose]: Loaded RankingsOverlay!
+2026-09-30 21:51:15 [verbose]: Loading ChannelManager...
+2026-09-30 21:51:15 [verbose]: Loaded ChannelManager!
+2026-09-30 21:51:15 [verbose]: Loading ChatOverlay...
+2026-09-30 21:51:15 [verbose]: Texture 's upload queue is large (100)
+2026-09-30 21:51:16 [verbose]: Loaded ChatOverlay!
+2026-09-30 21:51:16 [verbose]: Loading MessageNotifier...
+2026-09-30 21:51:16 [verbose]: Loaded MessageNotifier!
+2026-09-30 21:51:16 [verbose]: Loading SettingsOverlay...
+2026-09-30 21:51:16 [verbose]: Loaded SettingsOverlay!
+2026-09-30 21:51:16 [verbose]: Loading ChangelogOverlay...
+2026-09-30 21:51:16 [verbose]: Loaded ChangelogOverlay!
+2026-09-30 21:51:16 [verbose]: Loading UserProfileOverlay...
+2026-09-30 21:51:16 [verbose]: Loaded UserProfileOverlay!
+2026-09-30 21:51:16 [verbose]: Loading BeatmapSetOverlay...
+2026-09-30 21:51:16 [verbose]: Texture 's upload queue is large (100)
+2026-09-30 21:51:16 [verbose]: Loaded BeatmapSetOverlay!
+2026-09-30 21:51:16 [verbose]: Loading WikiOverlay...
+2026-09-30 21:51:16 [verbose]: Loaded WikiOverlay!
+2026-09-30 21:51:16 [verbose]: Loading SkinEditorOverlay...
+2026-09-30 21:51:16 [verbose]: Loaded SkinEditorOverlay!
+2026-09-30 21:51:16 [verbose]: Loading LoginOverlay...
+2026-09-30 21:51:16 [verbose]: Loaded LoginOverlay!
+2026-09-30 21:51:16 [verbose]: Loading NowPlayingOverlay...
+2026-09-30 21:51:16 [verbose]: Loaded NowPlayingOverlay!
+2026-09-30 21:51:16 [verbose]: Loading AccountCreationOverlay...
+2026-09-30 21:51:16 [verbose]: 📺 ScreenStack#272(depth:1) scheduling push ScreenWelcome#256
+2026-09-30 21:51:16 [verbose]: Loaded AccountCreationOverlay!
+2026-09-30 21:51:16 [verbose]: Loading DialogOverlay...
+2026-09-30 21:51:16 [verbose]: Loaded DialogOverlay!
+2026-09-30 21:51:16 [verbose]: Loading MedalOverlay...
+2026-09-30 21:51:16 [verbose]: Loaded MedalOverlay!
+2026-09-30 21:51:16 [verbose]: Loading BackgroundDataStoreProcessor...
+2026-09-30 21:51:16 [verbose]: Loaded BackgroundDataStoreProcessor!
+2026-09-30 21:51:16 [verbose]: Loading RealmDetachedBeatmapStore...
+2026-09-30 21:51:16 [verbose]: Beginning background data store processing..
+2026-09-30 21:51:16 [verbose]: Querying for beatmaps with missing star ratings...
+2026-09-30 21:51:16 [verbose]: Querying for beatmap sets to reprocess...
+2026-09-30 21:51:16 [verbose]: Querying for beatmaps with missing hitobject counts to reprocess...
+2026-09-30 21:51:16 [verbose]: Querying for scores to reprocess...
+2026-09-30 21:51:16 [verbose]: Loaded RealmDetachedBeatmapStore!
+2026-09-30 21:51:16 [verbose]: Loading QueueController...
+2026-09-30 21:51:16 [verbose]: Querying for scores that need mod multiplier upgrade...
+2026-09-30 21:51:16 [verbose]: Found 0 scores which require mod multiplier upgrade.
+2026-09-30 21:51:16 [verbose]: Querying for scores that need total score conversion...
+2026-09-30 21:51:16 [verbose]: Found 0 scores which require total score conversion.
+2026-09-30 21:51:16 [verbose]: Querying for scores that need rank upgrades...
+2026-09-30 21:51:16 [verbose]: Found 0 scores which require rank upgrades.
+2026-09-30 21:51:16 [verbose]: Loaded QueueController!
+2026-09-30 21:51:16 [verbose]: Querying for beatmap sets that contain missing submission/rank date...
+2026-09-30 21:51:16 [verbose]: Skipping user tag population because the local metadata source hasn't been updated since the last time user tags were checked (2026-09-21 00:00:00)
+2026-09-30 21:51:16 [verbose]: Finished background data store processing!
+2026-09-30 21:51:16 [verbose]: 📺 OsuScreenStack#334(depth:1) suspended Loader#123 (waiting on IntroTriangles#492)
+2026-09-30 21:51:16 [verbose]: 📺 OsuScreenStack#334(depth:2) entered IntroTriangles#492
+2026-09-30 21:51:16 [verbose]: 📺 BackgroundScreenStack#383(depth:1) loading BackgroundScreenDefault#407
+2026-09-30 21:51:16 [verbose]: Game-wide working beatmap updated to cYsmix - triangles (peppy) [peppy]
+2026-09-30 21:51:16 [verbose]: 📺 BackgroundScreenStack#383(depth:1) entered BackgroundScreenDefault#407
+2026-09-30 21:51:16 [verbose]: 🌅 Global background change queued
+2026-09-30 21:51:16 [verbose]: 🌅 Global background change queued
+2026-09-30 21:51:17 [verbose]: [spike] update thread gap 16.65 ms, GC gen0 +0 gen1 +0 gen2 +0, GC pause 0.00 ms
+2026-09-30 21:51:17 [verbose]: [spike] present gap 16.24 ms: frame-ready wait 0.00, waiting for update 0.00 (0 empty reads), draw 0.21, swap 0.14, other 15.90; longest update gap 16.65 ms; active True, Fullscreen; GC gen0 +0 gen1 +0 gen2 +0, GC pause 0.00 ms
+2026-09-30 21:51:17 [verbose]: [spike] update thread gap 6.04 ms, GC gen0 +0 gen1 +0 gen2 +0, GC pause 0.00 ms
+2026-09-30 21:51:17 [verbose]: [spike] present gap 6.27 ms: frame-ready wait 0.00, waiting for update 5.91 (0 empty reads), draw 0.16, swap 0.20, other 0.00; longest update gap 6.04 ms; active True, Fullscreen; GC gen0 +0 gen1 +0 gen2 +0, GC pause 0.00 ms
+2026-09-30 21:51:17 [verbose]: 🌅 Global background loading
+2026-09-30 21:51:17 [verbose]: [spike] present gap 5.63 ms: frame-ready wait 0.00, waiting for update 2.20 (0 empty reads), draw 3.25, swap 0.18, other 0.00; longest update gap 2.36 ms; active True, Fullscreen; GC gen0 +0 gen1 +0 gen2 +0, GC pause 0.00 ms
+2026-09-30 21:51:18 [verbose]: [input] 1,527 Hz effective, mean loop period 0.6547 ms (target 4,000 Hz)
+2026-09-30 21:51:19 [verbose]: 📺 OsuScreenStack#334(depth:2) suspended IntroTriangles#492 (waiting on MainMenu#639)
+2026-09-30 21:51:19 [verbose]: 📺 OsuScreenStack#334(depth:3) entered MainMenu#639
+2026-09-30 21:51:19 [verbose]: [spike] update thread gap 9.49 ms, GC gen0 +0 gen1 +0 gen2 +0, GC pause 0.00 ms
+2026-09-30 21:51:19 [verbose]: [spike] present gap 9.46 ms: frame-ready wait 0.00, waiting for update 9.00 (0 empty reads), draw 0.39, swap 0.08, other 0.00; longest update gap 9.49 ms; active True, Fullscreen; GC gen0 +0 gen1 +0 gen2 +0, GC pause 0.00 ms
+2026-09-30 21:51:19 [verbose]: ButtonSystem's state changed from Initial to TopLevel
+2026-09-30 21:51:19 [verbose]: [spike] update thread gap 10.12 ms, GC gen0 +1 gen1 +1 gen2 +0, GC pause 9.92 ms
+2026-09-30 21:51:19 [verbose]: [spike] present gap 10.37 ms: frame-ready wait 0.00, waiting for update 0.00 (0 empty reads), draw 10.28, swap 0.09, other 0.00; longest update gap 10.12 ms; active True, Fullscreen; GC gen0 +1 gen1 +1 gen2 +0, GC pause 9.92 ms
+2026-09-30 21:51:20 [verbose]: [spike] update thread gap 13.88 ms, GC gen0 +0 gen1 +0 gen2 +0, GC pause 0.00 ms
+2026-09-30 21:51:20 [verbose]: [spike] present gap 14.90 ms: frame-ready wait 0.00, waiting for update 13.60 (0 empty reads), draw 1.23, swap 0.07, other 0.00; longest update gap 13.88 ms; active True, Fullscreen; GC gen0 +0 gen1 +0 gen2 +0, GC pause 0.00 ms
+2026-09-30 21:51:20 [verbose]: ButtonSystem's state changed from TopLevel to Play
+2026-09-30 21:51:21 [verbose]: 📺 OsuScreenStack#334(depth:3) suspended MainMenu#639 (waiting on SoloSongSelect#278)
+2026-09-30 21:51:21 [verbose]: ButtonSystem's state changed from Play to EnteringMode
+2026-09-30 21:51:21 [verbose]: 📺 OsuScreenStack#334(depth:4) loading SoloSongSelect#278
+2026-09-30 21:51:21 [verbose]: [spike] update thread gap 6.46 ms, GC gen0 +1 gen1 +0 gen2 +0, GC pause 6.26 ms
+2026-09-30 21:51:21 [verbose]: [spike] present gap 6.76 ms: frame-ready wait 0.00, waiting for update 0.00 (0 empty reads), draw 6.67, swap 0.10, other 0.00; longest update gap 6.46 ms; active True, Fullscreen; GC gen0 +1 gen1 +0 gen2 +0, GC pause 6.26 ms
+2026-09-30 21:51:21 [verbose]: [spike] update thread gap 6.77 ms, GC gen0 +1 gen1 +1 gen2 +0, GC pause 6.63 ms
+2026-09-30 21:51:21 [verbose]: [spike] present gap 7.14 ms: frame-ready wait 0.00, waiting for update 0.00 (0 empty reads), draw 7.04, swap 0.09, other 0.00; longest update gap 6.77 ms; active True, Fullscreen; GC gen0 +1 gen1 +1 gen2 +0, GC pause 6.63 ms
+2026-09-30 21:51:21 [verbose]: 🖍️ Shader Texture2D/Ghost loaded from cache!
+2026-09-30 21:51:21 [verbose]: [spike] update thread gap 8.34 ms, GC gen0 +2 gen1 +2 gen2 +1, GC pause 8.20 ms
+2026-09-30 21:51:21 [verbose]: [spike] present gap 23.89 ms: frame-ready wait 0.00, waiting for update 0.00 (0 empty reads), draw 23.80, swap 0.09, other 0.00; longest update gap 8.34 ms; active True, Fullscreen; GC gen0 +2 gen1 +2 gen2 +1, GC pause 8.20 ms
+2026-09-30 21:51:21 [verbose]: 📺 OsuScreenStack#334(depth:4) entered SoloSongSelect#278
+2026-09-30 21:51:21 [verbose]: 📺 BackgroundScreenStack#383(depth:2) loading BackgroundScreenBeatmap#442
+2026-09-30 21:51:21 [verbose]: Invalidating working beatmap cache for cYsmix - triangles (peppy) [peppy]
+2026-09-30 21:51:21 [verbose]: Game-wide working beatmap updated to please select or load a beatmap! - no beatmap selected!
+2026-09-30 21:51:21 [verbose]: Song select decided to ensurePlayingSelected
+2026-09-30 21:51:21 [verbose]: Song select decided to ensurePlayingSelected
+2026-09-30 21:51:21 [verbose]: [spike] update thread gap 57.50 ms, GC gen0 +0 gen1 +0 gen2 +0, GC pause 0.00 ms
+2026-09-30 21:51:21 [verbose]: 📺 BackgroundScreenStack#383(depth:2) suspended BackgroundScreenDefault#407 (waiting on BackgroundScreenBeatmap#442)
+2026-09-30 21:51:21 [verbose]: 📺 BackgroundScreenStack#383(depth:2) entered BackgroundScreenBeatmap#442
+2026-09-30 21:51:21 [verbose]: 🌅 Global background change queued
+2026-09-30 21:51:21 [verbose]: [spike] present gap 57.76 ms: frame-ready wait 0.00, waiting for update 57.12 (0 empty reads), draw 0.51, swap 0.13, other 0.00; longest update gap 57.50 ms; active True, Fullscreen; GC gen0 +0 gen1 +0 gen2 +0, GC pause 0.00 ms
+2026-09-30 21:51:21 [verbose]: Carousel[op 57749882] 0 ms: Filter operation queued, waiting for 100 ms debounce
+2026-09-30 21:51:21 [verbose]: Carousel[op 57749882] 100 ms: Performing BeatmapCarouselFilterMatching
+2026-09-30 21:51:21 [verbose]: Carousel[op 57749882] 103 ms: Performing BeatmapCarouselFilterSorting
+2026-09-30 21:51:21 [verbose]: Carousel[op 57749882] 104 ms: Performing BeatmapCarouselFilterGrouping
+2026-09-30 21:51:21 [verbose]: Carousel[op 57749882] 106 ms: Updating Y positions
+2026-09-30 21:51:21 [verbose]: Carousel[op 57749882] 106 ms: Items ready for display
+2026-09-30 21:51:21 [verbose]: Texture 's upload queue is large (100)
+2026-09-30 21:51:21 [verbose]: Texture 's upload queue is large (200)
+2026-09-30 21:51:21 [verbose]: [spike] update thread gap 20.97 ms, GC gen0 +0 gen1 +0 gen2 +0, GC pause 0.00 ms
+2026-09-30 21:51:21 [verbose]: [spike] present gap 20.93 ms: frame-ready wait 0.00, waiting for update 19.42 (0 empty reads), draw 1.41, swap 0.09, other 0.00; longest update gap 20.97 ms; active True, Fullscreen; GC gen0 +0 gen1 +0 gen2 +0, GC pause 0.00 ms
+2026-09-30 21:51:21 [verbose]: [spike] present gap 23.64 ms: frame-ready wait 0.00, waiting for update 22.35 (0 empty reads), draw 1.12, swap 0.15, other 0.02; longest update gap 0.00 ms; active True, Fullscreen; GC gen0 +0 gen1 +0 gen2 +0, GC pause 0.00 ms
+2026-09-30 21:51:21 [verbose]: [spike] update thread gap 25.87 ms, GC gen0 +0 gen1 +0 gen2 +0, GC pause 0.00 ms
+2026-09-30 21:51:21 [verbose]: [spike] present gap 7.26 ms: frame-ready wait 0.00, waiting for update 6.23 (0 empty reads), draw 0.86, swap 0.14, other 0.03; longest update gap 25.87 ms; active True, Fullscreen; GC gen0 +0 gen1 +0 gen2 +0, GC pause 0.00 ms
+2026-09-30 21:51:21 [verbose]: [spike] present gap 17.67 ms: frame-ready wait 0.00, waiting for update 0.00 (0 empty reads), draw 17.55, swap 0.11, other 0.00; longest update gap 0.36 ms; active True, Fullscreen; GC gen0 +1 gen1 +1 gen2 +0, GC pause 16.73 ms
+2026-09-30 21:51:21 [verbose]: [spike] update thread gap 17.26 ms, GC gen0 +1 gen1 +1 gen2 +0, GC pause 16.73 ms
+2026-09-30 21:51:21 [verbose]: Game-wide working beatmap updated to Calvin Harris feat. Ellie Goulding - Outside (Whippa Hardstyle Remix) (STaLeRGooD) [Expert]
+2026-09-30 21:51:21 [verbose]: Invalidating working beatmap cache for Calvin Harris feat. Ellie Goulding - Outside (Whippa Hardstyle Remix) (STaLeRGooD) [Expert]
+2026-09-30 21:51:21 [verbose]: Song select decided to ensurePlayingSelected
+2026-09-30 21:51:21 [verbose]: [spike] present gap 12.04 ms: frame-ready wait 0.00, waiting for update 11.31 (0 empty reads), draw 0.65, swap 0.07, other 0.00; longest update gap 0.00 ms; active True, Fullscreen; GC gen0 +0 gen1 +0 gen2 +0, GC pause 0.00 ms
+2026-09-30 21:51:21 [verbose]: [spike] update thread gap 29.27 ms, GC gen0 +0 gen1 +0 gen2 +0, GC pause 0.00 ms
+2026-09-30 21:51:21 [verbose]: 🌅 Global background change queued
+2026-09-30 21:51:21 [verbose]: [spike] update thread gap 8.05 ms, GC gen0 +0 gen1 +0 gen2 +0, GC pause 0.00 ms
+2026-09-30 21:51:21 [verbose]: [spike] present gap 25.47 ms: frame-ready wait 0.00, waiting for update 24.59 (0 empty reads), draw 0.77, swap 0.09, other 0.02; longest update gap 29.27 ms; active True, Fullscreen; GC gen0 +0 gen1 +0 gen2 +0, GC pause 0.00 ms
+2026-09-30 21:51:21 [verbose]: [spike] update thread gap 7.57 ms, GC gen0 +1 gen1 +0 gen2 +0, GC pause 7.03 ms
+2026-09-30 21:51:21 [verbose]: [spike] present gap 8.07 ms: frame-ready wait 0.00, waiting for update 0.00 (0 empty reads), draw 8.00, swap 0.07, other 0.00; longest update gap 7.57 ms; active True, Fullscreen; GC gen0 +1 gen1 +0 gen2 +0, GC pause 7.03 ms
+2026-09-30 21:51:22 [verbose]: [spike] update thread gap 5.72 ms, GC gen0 +0 gen1 +0 gen2 +0, GC pause 0.00 ms
+2026-09-30 21:51:22 [verbose]: [spike] present gap 5.46 ms: frame-ready wait 0.00, waiting for update 4.78 (0 empty reads), draw 0.63, swap 0.05, other 0.00; longest update gap 5.72 ms; active True, Fullscreen; GC gen0 +0 gen1 +0 gen2 +0, GC pause 0.00 ms
+2026-09-30 21:51:22 [verbose]: Carousel[op 27836305] 0 ms: Filter operation queued, waiting for 100 ms debounce
+2026-09-30 21:51:22 [verbose]: Carousel[op 27836305] 100 ms: Performing BeatmapCarouselFilterMatching
+2026-09-30 21:51:22 [verbose]: Carousel[op 27836305] 101 ms: Performing BeatmapCarouselFilterSorting
+2026-09-30 21:51:22 [verbose]: Carousel[op 27836305] 101 ms: Performing BeatmapCarouselFilterGrouping
+2026-09-30 21:51:22 [verbose]: Carousel[op 27836305] 101 ms: Updating Y positions
+2026-09-30 21:51:22 [verbose]: Carousel[op 27836305] 101 ms: Items ready for display
+2026-09-30 21:51:22 [verbose]: [spike] update thread gap 10.71 ms, GC gen0 +1 gen1 +1 gen2 +0, GC pause 9.88 ms
+2026-09-30 21:51:22 [verbose]: [spike] present gap 15.08 ms: frame-ready wait 0.00, waiting for update 2.26 (0 empty reads), draw 12.74, swap 0.08, other 0.00; longest update gap 10.71 ms; active True, Fullscreen; GC gen0 +1 gen1 +1 gen2 +0, GC pause 9.88 ms
+2026-09-30 21:51:23 [verbose]: Carousel[op 38893678] 0 ms: Filter operation queued, waiting for 100 ms debounce
+2026-09-30 21:51:23 [verbose]: Carousel[op 38893678] 100 ms: Performing BeatmapCarouselFilterMatching
+2026-09-30 21:51:23 [verbose]: Carousel[op 38893678] 101 ms: Performing BeatmapCarouselFilterSorting
+2026-09-30 21:51:23 [verbose]: Carousel[op 38893678] 101 ms: Performing BeatmapCarouselFilterGrouping
+2026-09-30 21:51:23 [verbose]: Carousel[op 38893678] 101 ms: Updating Y positions
+2026-09-30 21:51:23 [verbose]: Carousel[op 38893678] 101 ms: Items ready for display
+2026-09-30 21:51:23 [verbose]: Game-wide working beatmap updated to Calvin Harris feat. Ellie Goulding - Outside (Whippa Hardstyle Remix) (STaLeRGooD) [Expert]
+2026-09-30 21:51:23 [verbose]: Invalidating working beatmap cache for Calvin Harris feat. Ellie Goulding - Outside (Whippa Hardstyle Remix) (STaLeRGooD) [Expert]
+2026-09-30 21:51:24 [verbose]: 📺 OsuScreenStack#334(depth:4) suspended SoloSongSelect#278 (waiting on SoloSongSelect+PlayerLoader#617)
+2026-09-30 21:51:24 [verbose]: 📺 OsuScreenStack#334(depth:5) loading SoloSongSelect+PlayerLoader#617
+2026-09-30 21:51:24 [verbose]: [spike] present gap 6.84 ms: frame-ready wait 0.00, waiting for update 5.91 (0 empty reads), draw 0.85, swap 0.08, other 0.00; longest update gap 0.00 ms; active True, Fullscreen; GC gen0 +1 gen1 +0 gen2 +0, GC pause 1.93 ms
+2026-09-30 21:51:24 [verbose]: [spike] update thread gap 11.37 ms, GC gen0 +1 gen1 +0 gen2 +0, GC pause 1.93 ms
+2026-09-30 21:51:24 [verbose]: [spike] present gap 8.26 ms: frame-ready wait 0.00, waiting for update 6.94 (0 empty reads), draw 1.24, swap 0.06, other 0.02; longest update gap 11.37 ms; active True, Fullscreen; GC gen0 +0 gen1 +0 gen2 +0, GC pause 0.00 ms
+2026-09-30 21:51:24 [verbose]: 📺 OsuScreenStack#334(depth:5) entered SoloSongSelect+PlayerLoader#617
+2026-09-30 21:51:24 [verbose]: [spike] update thread gap 9.96 ms, GC gen0 +0 gen1 +0 gen2 +0, GC pause 0.00 ms
+2026-09-30 21:51:24 [verbose]: [spike] present gap 9.33 ms: frame-ready wait 0.00, waiting for update 8.40 (0 empty reads), draw 0.84, swap 0.09, other 0.00; longest update gap 9.96 ms; active True, Fullscreen; GC gen0 +0 gen1 +0 gen2 +0, GC pause 0.00 ms
+2026-09-30 21:51:24 [verbose]: [input] 4,000 Hz effective, mean loop period 0.2500 ms (target 4,000 Hz)
+2026-09-30 21:51:24 [verbose]: [spike] update thread gap 6.93 ms, GC gen0 +1 gen1 +0 gen2 +0, GC pause 6.77 ms
+2026-09-30 21:51:24 [verbose]: [spike] present gap 7.14 ms: frame-ready wait 0.00, waiting for update 0.00 (0 empty reads), draw 7.08, swap 0.07, other 0.00; longest update gap 6.93 ms; active True, Fullscreen; GC gen0 +1 gen1 +0 gen2 +0, GC pause 6.77 ms
+2026-09-30 21:51:24 [verbose]: [spike] update thread gap 10.95 ms, GC gen0 +1 gen1 +1 gen2 +0, GC pause 10.69 ms
+2026-09-30 21:51:24 [verbose]: [spike] present gap 11.28 ms: frame-ready wait 0.00, waiting for update 0.00 (0 empty reads), draw 11.16, swap 0.11, other 0.00; longest update gap 10.95 ms; active True, Fullscreen; GC gen0 +1 gen1 +1 gen2 +0, GC pause 10.69 ms
+2026-09-30 21:51:24 [verbose]: Texture 's upload queue is large (100)
+2026-09-30 21:51:24 [verbose]: [spike] update thread gap 6.51 ms, GC gen0 +1 gen1 +0 gen2 +0, GC pause 6.24 ms
+2026-09-30 21:51:24 [verbose]: [spike] present gap 7.71 ms: frame-ready wait 0.00, waiting for update 0.00 (0 empty reads), draw 7.63, swap 0.08, other 0.00; longest update gap 6.51 ms; active True, Fullscreen; GC gen0 +1 gen1 +0 gen2 +0, GC pause 6.24 ms
+2026-09-30 21:51:24 [verbose]: [spike] update thread gap 10.83 ms, GC gen0 +1 gen1 +1 gen2 +0, GC pause 10.47 ms
+2026-09-30 21:51:24 [verbose]: [spike] present gap 11.07 ms: frame-ready wait 0.00, waiting for update 0.00 (0 empty reads), draw 10.99, swap 0.08, other 0.00; longest update gap 10.83 ms; active True, Fullscreen; GC gen0 +1 gen1 +1 gen2 +0, GC pause 10.47 ms
+2026-09-30 21:51:25 [verbose]: Starting high performance session
+2026-09-30 21:51:26 [verbose]: 📺 OsuScreenStack#334(depth:5) suspended SoloSongSelect+PlayerLoader#617 (waiting on SoloPlayer#270)
+2026-09-30 21:51:26 [verbose]: 📺 OsuScreenStack#334(depth:6) entered SoloPlayer#270
+2026-09-30 21:51:26 [verbose]: GameplayClockContainer seeking to 0
+2026-09-30 21:51:26 [verbose]: [spike] update thread gap 5.31 ms, GC gen0 +0 gen1 +0 gen2 +0, GC pause 0.00 ms
+2026-09-30 21:51:26 [verbose]: [spike] present gap 6.15 ms: frame-ready wait 0.00, waiting for update 4.96 (0 empty reads), draw 1.05, swap 0.14, other 0.00; longest update gap 5.31 ms; active True, Fullscreen; GC gen0 +1 gen1 +0 gen2 +0, GC pause 0.56 ms
+2026-09-30 21:51:26 [verbose]: Texture 's upload queue is large (100)
+2026-09-30 21:51:26 [verbose]: GameplayClockContainer started via call to StartGameplayClock
+2026-09-30 21:51:26 [verbose]: [spike] update thread gap 46.34 ms, GC gen0 +9 gen1 +3 gen2 +0, GC pause 5.50 ms
+2026-09-30 21:51:26 [verbose]: [spike] present gap 50.27 ms: frame-ready wait 0.00, waiting for update 46.04 (0 empty reads), draw 4.14, swap 0.09, other 0.00; longest update gap 46.34 ms; active True, Fullscreen; GC gen0 +9 gen1 +3 gen2 +0, GC pause 5.50 ms
+2026-09-30 21:51:26 [verbose]: [spike] update thread gap 9.41 ms, GC gen0 +5 gen1 +2 gen2 +0, GC pause 3.17 ms
+2026-09-30 21:51:26 [verbose]: [spike] present gap 13.95 ms: frame-ready wait 0.00, waiting for update 5.17 (0 empty reads), draw 8.63, swap 0.12, other 0.02; longest update gap 9.41 ms; active True, Fullscreen; GC gen0 +12 gen1 +4 gen2 +0, GC pause 6.97 ms
+2026-09-30 21:51:26 [verbose]: [spike] present gap 7.31 ms: frame-ready wait 0.00, waiting for update 0.00 (0 empty reads), draw 7.24, swap 0.07, other 0.00; longest update gap 1.12 ms; active True, Fullscreen; GC gen0 +4 gen1 +1 gen2 +0, GC pause 1.42 ms
+2026-09-30 21:51:27 [verbose]: GameplayClockContainer seeking to 3497
+2026-09-30 21:51:27 [verbose]: [spike] update thread gap 6.69 ms, GC gen0 +1 gen1 +0 gen2 +0, GC pause 0.42 ms
+2026-09-30 21:51:27 [verbose]: [spike] present gap 6.23 ms: frame-ready wait 0.00, waiting for update 6.00 (0 empty reads), draw 0.18, swap 0.04, other 0.00; longest update gap 6.69 ms; active True, Fullscreen; GC gen0 +0 gen1 +0 gen2 +0, GC pause 0.00 ms
+2026-09-30 21:51:29 [verbose]: [input] 4,000 Hz effective, mean loop period 0.2500 ms (target 4,000 Hz)
+2026-09-30 21:51:30 [verbose]: [spike] update thread gap 13.96 ms, GC gen0 +1 gen1 +0 gen2 +0, GC pause 0.65 ms
+2026-09-30 21:51:30 [verbose]: [spike] present gap 13.90 ms: frame-ready wait 0.00, waiting for update 13.67 (0 empty reads), draw 0.16, swap 0.06, other 0.00; longest update gap 13.96 ms; active True, Fullscreen; GC gen0 +1 gen1 +0 gen2 +0, GC pause 0.65 ms
+2026-09-30 21:51:30 [verbose]: [spike] present gap 10.16 ms: frame-ready wait 0.00, waiting for update 2.34 (0 empty reads), draw 7.74, swap 0.07, other 0.02; longest update gap 2.58 ms; active True, Fullscreen; GC gen0 +0 gen1 +0 gen2 +0, GC pause 0.00 ms
+2026-09-30 21:51:30 [verbose]: [spike] update thread gap 14.45 ms, GC gen0 +1 gen1 +0 gen2 +0, GC pause 0.51 ms
+2026-09-30 21:51:30 [verbose]: [spike] present gap 14.57 ms: frame-ready wait 0.00, waiting for update 14.19 (0 empty reads), draw 0.33, swap 0.05, other 0.00; longest update gap 14.45 ms; active True, Fullscreen; GC gen0 +1 gen1 +0 gen2 +0, GC pause 0.51 ms
+2026-09-30 21:51:34 [verbose]: [input] 4,000 Hz effective, mean loop period 0.2500 ms (target 4,000 Hz)
+2026-09-30 21:51:39 [verbose]: [input] 4,000 Hz effective, mean loop period 0.2500 ms (target 4,000 Hz)
+2026-09-30 21:51:44 [verbose]: [input] 4,000 Hz effective, mean loop period 0.2500 ms (target 4,000 Hz)
+2026-09-30 21:51:49 [verbose]: [input] 4,000 Hz effective, mean loop period 0.2500 ms (target 4,000 Hz)
+2026-09-30 21:51:54 [verbose]: [input] 4,000 Hz effective, mean loop period 0.2500 ms (target 4,000 Hz)
+2026-09-30 21:51:59 [verbose]: [input] 4,000 Hz effective, mean loop period 0.2500 ms (target 4,000 Hz)
+2026-09-30 21:52:04 [verbose]: [input] 4,000 Hz effective, mean loop period 0.2500 ms (target 4,000 Hz)
+2026-09-30 21:52:09 [verbose]: [input] 4,000 Hz effective, mean loop period 0.2500 ms (target 4,000 Hz)
+2026-09-30 21:52:14 [verbose]: [input] 4,000 Hz effective, mean loop period 0.2500 ms (target 4,000 Hz)
+2026-09-30 21:52:19 [verbose]: [input] 4,000 Hz effective, mean loop period 0.2500 ms (target 4,000 Hz)
+2026-09-30 21:52:24 [verbose]: [input] 4,000 Hz effective, mean loop period 0.2500 ms (target 4,000 Hz)
+2026-09-30 21:52:29 [verbose]: [input] 4,000 Hz effective, mean loop period 0.2500 ms (target 4,000 Hz)
+2026-09-30 21:52:34 [verbose]: [input] 4,000 Hz effective, mean loop period 0.2500 ms (target 4,000 Hz)
+2026-09-30 21:52:39 [verbose]: [input] 4,000 Hz effective, mean loop period 0.2500 ms (target 4,000 Hz)
+2026-09-30 21:52:44 [verbose]: [input] 4,000 Hz effective, mean loop period 0.2500 ms (target 4,000 Hz)
+2026-09-30 21:52:50 [verbose]: [input] 4,000 Hz effective, mean loop period 0.2500 ms (target 4,000 Hz)
+2026-09-30 21:52:55 [verbose]: [input] 4,000 Hz effective, mean loop period 0.2500 ms (target 4,000 Hz)
+2026-09-30 21:53:00 [verbose]: [input] 4,000 Hz effective, mean loop period 0.2500 ms (target 4,000 Hz)
+2026-09-30 21:53:05 [verbose]: [input] 4,000 Hz effective, mean loop period 0.2500 ms (target 4,000 Hz)
+2026-09-30 21:53:10 [verbose]: [input] 4,000 Hz effective, mean loop period 0.2500 ms (target 4,000 Hz)
+2026-09-30 21:53:15 [verbose]: [input] 4,000 Hz effective, mean loop period 0.2500 ms (target 4,000 Hz)
+2026-09-30 21:53:20 [verbose]: [input] 4,000 Hz effective, mean loop period 0.2500 ms (target 4,000 Hz)
+2026-09-30 21:53:25 [verbose]: [input] 4,000 Hz effective, mean loop period 0.2500 ms (target 4,000 Hz)
+2026-09-30 21:53:30 [verbose]: [input] 4,000 Hz effective, mean loop period 0.2500 ms (target 4,000 Hz)
+2026-09-30 21:53:35 [verbose]: [input] 4,000 Hz effective, mean loop period 0.2500 ms (target 4,000 Hz)
+2026-09-30 21:53:40 [verbose]: [input] 4,000 Hz effective, mean loop period 0.2500 ms (target 4,000 Hz)
+2026-09-30 21:53:44 [verbose]: No token, skipping score submission
+2026-09-30 21:53:44 [verbose]: [spike] update thread gap 6.81 ms, GC gen0 +7 gen1 +2 gen2 +0, GC pause 3.09 ms
+2026-09-30 21:53:44 [verbose]: [spike] present gap 6.49 ms: frame-ready wait 0.00, waiting for update 6.17 (0 empty reads), draw 0.21, swap 0.11, other 0.00; longest update gap 6.81 ms; active True, Fullscreen; GC gen0 +6 gen1 +2 gen2 +0, GC pause 2.65 ms
+2026-09-30 21:53:44 [verbose]: Ending high performance session
+2026-09-30 21:53:44 [verbose]: 📺 OsuScreenStack#334(depth:6) suspended SoloPlayer#270 (waiting on SoloResultsScreen#520)
+2026-09-30 21:53:44 [verbose]: 📺 OsuScreenStack#334(depth:7) loading SoloResultsScreen#520
+2026-09-30 21:53:44 [verbose]: 📺 OsuScreenStack#334(depth:7) entered SoloResultsScreen#520
+2026-09-30 21:53:44 [verbose]: [spike] update thread gap 16.83 ms, GC gen0 +0 gen1 +0 gen2 +0, GC pause 0.00 ms
+2026-09-30 21:53:44 [verbose]: [spike] present gap 21.49 ms: frame-ready wait 0.00, waiting for update 16.30 (0 empty reads), draw 1.75, swap 3.44, other 0.00; longest update gap 16.83 ms; active True, Fullscreen; GC gen0 +0 gen1 +0 gen2 +0, GC pause 3.39 ms
+2026-09-30 21:53:44 [verbose]: [spike] update thread gap 17.84 ms, GC gen0 +0 gen1 +0 gen2 +0, GC pause 3.39 ms
+2026-09-30 21:53:44 [verbose]: [spike] present gap 13.40 ms: frame-ready wait 0.00, waiting for update 12.82 (0 empty reads), draw 0.42, swap 0.16, other 0.00; longest update gap 17.84 ms; active True, Fullscreen; GC gen0 +0 gen1 +0 gen2 +0, GC pause 0.00 ms
+2026-09-30 21:53:44 [verbose]: [spike] update thread gap 8.32 ms, GC gen0 +0 gen1 +0 gen2 +0, GC pause 0.00 ms
+2026-09-30 21:53:44 [verbose]: [spike] present gap 8.19 ms: frame-ready wait 0.00, waiting for update 6.75 (0 empty reads), draw 1.30, swap 0.13, other 0.00; longest update gap 8.32 ms; active True, Fullscreen; GC gen0 +0 gen1 +0 gen2 +0, GC pause 0.00 ms
+2026-09-30 21:53:44 [verbose]: [spike] present gap 8.12 ms: frame-ready wait 0.00, waiting for update 0.00 (0 empty reads), draw 0.09, swap 8.04, other 0.00; longest update gap 0.14 ms; active True, Fullscreen; GC gen0 +1 gen1 +0 gen2 +0, GC pause 7.95 ms
+2026-09-30 21:53:44 [verbose]: [spike] update thread gap 8.21 ms, GC gen0 +1 gen1 +0 gen2 +0, GC pause 7.95 ms
+2026-09-30 21:53:45 [verbose]: 📺 OsuScreenStack#334(depth:6) exit from SoloResultsScreen#520
+2026-09-30 21:53:45 [verbose]: 📺 OsuScreenStack#334(depth:6) resume to SoloPlayer#270
+2026-09-30 21:53:45 [verbose]: [input] 4,000 Hz effective, mean loop period 0.2500 ms (target 4,000 Hz)
+2026-09-30 21:53:45 [verbose]: No token, skipping score submission
+2026-09-30 21:53:45 [verbose]: 📺 OsuScreenStack#334(depth:5) exit from SoloPlayer#270
+2026-09-30 21:53:45 [verbose]: 📺 OsuScreenStack#334(depth:5) resume to SoloSongSelect+PlayerLoader#617
+2026-09-30 21:53:45 [verbose]: 📺 OsuScreenStack#334(depth:4) exit from SoloSongSelect+PlayerLoader#617
+2026-09-30 21:53:45 [verbose]: 📺 OsuScreenStack#334(depth:4) resume to SoloSongSelect#278
+2026-09-30 21:53:45 [verbose]: Invalidating working beatmap cache for Calvin Harris feat. Ellie Goulding - Outside (Whippa Hardstyle Remix) (STaLeRGooD) [Expert]
+2026-09-30 21:53:45 [verbose]: Invalidating working beatmap cache for Calvin Harris feat. Ellie Goulding - Outside (Whippa Hardstyle Remix) (STaLeRGooD) [Expert]
+2026-09-30 21:53:45 [verbose]: [spike] update thread gap 27.55 ms, GC gen0 +1 gen1 +1 gen2 +0, GC pause 9.41 ms
+2026-09-30 21:53:45 [verbose]: Carousel[op 2736344] 0 ms: Filter operation queued, waiting for 100 ms debounce
+2026-09-30 21:53:45 [verbose]: [spike] present gap 27.84 ms: frame-ready wait 0.00, waiting for update 26.82 (0 empty reads), draw 0.92, swap 0.10, other 0.00; longest update gap 27.55 ms; active True, Fullscreen; GC gen0 +1 gen1 +1 gen2 +0, GC pause 9.41 ms
+2026-09-30 21:53:45 [verbose]: [spike] update thread gap 6.51 ms, GC gen0 +0 gen1 +0 gen2 +0, GC pause 0.00 ms
+2026-09-30 21:53:45 [verbose]: [spike] present gap 5.89 ms: frame-ready wait 0.00, waiting for update 3.26 (0 empty reads), draw 2.55, swap 0.06, other 0.02; longest update gap 6.51 ms; active True, Fullscreen; GC gen0 +0 gen1 +0 gen2 +0, GC pause 0.00 ms
+2026-09-30 21:53:45 [verbose]: Carousel[op 2736344] 98 ms: Performing BeatmapCarouselFilterMatching
+2026-09-30 21:53:45 [verbose]: Carousel[op 2736344] 98 ms: Performing BeatmapCarouselFilterSorting
+2026-09-30 21:53:45 [verbose]: Carousel[op 2736344] 98 ms: Performing BeatmapCarouselFilterGrouping
+2026-09-30 21:53:45 [verbose]: Carousel[op 2736344] 98 ms: Updating Y positions
+2026-09-30 21:53:45 [verbose]: Carousel[op 2736344] 99 ms: Items ready for display
+2026-09-30 21:53:45 [verbose]: 📺 BackgroundScreenStack#383(depth:1) exit from BackgroundScreenBeatmap#442
+2026-09-30 21:53:45 [verbose]: 📺 BackgroundScreenStack#383(depth:1) resume to BackgroundScreenDefault#407
+2026-09-30 21:53:45 [verbose]: 📺 OsuScreenStack#334(depth:3) exit from SoloSongSelect#278
+2026-09-30 21:53:45 [verbose]: 📺 OsuScreenStack#334(depth:3) resume to MainMenu#639
+2026-09-30 21:53:45 [verbose]: 🌅 Global background change queued
+2026-09-30 21:53:45 [verbose]: 🌅 Global background change queued
+2026-09-30 21:53:45 [verbose]: [spike] update thread gap 6.10 ms, GC gen0 +0 gen1 +0 gen2 +0, GC pause 0.00 ms
+2026-09-30 21:53:45 [verbose]: [spike] present gap 5.48 ms: frame-ready wait 0.00, waiting for update 4.81 (0 empty reads), draw 0.64, swap 0.03, other 0.00; longest update gap 6.10 ms; active True, Fullscreen; GC gen0 +0 gen1 +0 gen2 +0, GC pause 0.00 ms
+2026-09-30 21:53:45 [verbose]: ButtonSystem's state changed from EnteringMode to TopLevel
+2026-09-30 21:53:45 [verbose]: ButtonSystem's state changed from TopLevel to Initial
+2026-09-30 21:53:46 [verbose]: [spike] present gap 9.97 ms: frame-ready wait 0.00, waiting for update 0.00 (0 empty reads), draw 0.16, swap 9.82, other 0.00; longest update gap 0.08 ms; active True, Fullscreen; GC gen0 +1 gen1 +0 gen2 +0, GC pause 9.76 ms
+2026-09-30 21:53:46 [verbose]: [spike] update thread gap 9.98 ms, GC gen0 +1 gen1 +0 gen2 +0, GC pause 9.76 ms
+2026-09-30 21:53:46 [verbose]: 🌅 Global background loading
+2026-09-30 21:53:46 [verbose]: [spike] present gap 9.32 ms: frame-ready wait 0.00, waiting for update 0.00 (0 empty reads), draw 0.07, swap 9.25, other 0.00; longest update gap 0.03 ms; active True, Fullscreen; GC gen0 +1 gen1 +1 gen2 +0, GC pause 9.23 ms
+2026-09-30 21:53:46 [verbose]: [spike] update thread gap 9.36 ms, GC gen0 +1 gen1 +1 gen2 +0, GC pause 9.23 ms
+2026-09-30 21:53:49 [verbose]: Game-wide working beatmap updated to BPM15Q - Go Shoot! (Venyera) [Chu's Hard]
+2026-09-30 21:53:49 [verbose]: 🌅 Global background change queued
+2026-09-30 21:53:49 [verbose]: 🌅 Global background loading
+2026-09-30 21:53:51 [verbose]: [input] 1,223 Hz effective, mean loop period 0.8180 ms (target 60 Hz)
+2026-09-30 21:54:00 [verbose]: [input] 60 Hz effective, mean loop period 16.6665 ms (target 60 Hz)
+2026-09-30 21:54:08 [verbose]: [input] 60 Hz effective, mean loop period 16.6667 ms (target 60 Hz)
+2026-09-30 21:54:17 [verbose]: [input] 60 Hz effective, mean loop period 16.6666 ms (target 60 Hz)
+2026-09-30 21:54:25 [verbose]: [input] 60 Hz effective, mean loop period 16.6667 ms (target 60 Hz)
+2026-09-30 21:54:34 [verbose]: [input] 60 Hz effective, mean loop period 16.6666 ms (target 60 Hz)
+2026-09-30 21:54:42 [verbose]: [input] 60 Hz effective, mean loop period 16.6666 ms (target 60 Hz)
+2026-09-30 21:54:51 [verbose]: [input] 60 Hz effective, mean loop period 16.6666 ms (target 60 Hz)
+2026-09-30 21:54:59 [verbose]: [input] 60 Hz effective, mean loop period 16.6666 ms (target 60 Hz)
+2026-09-30 21:55:08 [verbose]: [input] 60 Hz effective, mean loop period 16.6666 ms (target 60 Hz)
+2026-09-30 21:55:16 [verbose]: [input] 60 Hz effective, mean loop period 16.6667 ms (target 60 Hz)
+2026-09-30 21:55:25 [verbose]: [input] 60 Hz effective, mean loop period 16.6666 ms (target 60 Hz)
+2026-09-30 21:55:33 [verbose]: [input] 60 Hz effective, mean loop period 16.6666 ms (target 60 Hz)
+2026-09-30 21:55:42 [verbose]: [input] 60 Hz effective, mean loop period 16.6667 ms (target 60 Hz)
+2026-09-30 21:55:50 [verbose]: [spike] update thread gap 16.94 ms, GC gen0 +0 gen1 +0 gen2 +0, GC pause 0.00 ms
+2026-09-30 21:55:50 [verbose]: [input] 63 Hz effective, mean loop period 15.8817 ms (target 4,000 Hz)
+2026-09-30 21:55:50 [verbose]: [spike] present gap 123,165.78 ms: frame-ready wait 0.00, waiting for update 0.00 (0 empty reads), draw 4.88, swap 0.16, other 123,160.74; longest update gap 16.94 ms; active True, Fullscreen; GC gen0 +0 gen1 +0 gen2 +0, GC pause 0.00 ms
+2026-09-30 21:55:50 [verbose]: [spike] present gap 5.39 ms: frame-ready wait 0.00, waiting for update 0.00 (0 empty reads), draw 0.26, swap 5.13, other 0.00; longest update gap 0.07 ms; active True, Fullscreen; GC gen0 +0 gen1 +0 gen2 +0, GC pause 0.00 ms
+2026-09-30 21:55:51 [verbose]: ButtonSystem's state changed from Initial to Exit
+2026-09-30 21:55:51 [verbose]: 📺 OsuScreenStack#334(depth:2) exit from MainMenu#639
+2026-09-30 21:55:51 [verbose]: 📺 OsuScreenStack#334(depth:2) resume to IntroTriangles#492
+2026-09-30 21:55:54 [verbose]: 📺 BackgroundScreenStack#383(depth:0) exit from BackgroundScreenDefault#407
+2026-09-30 21:55:54 [verbose]: 📺 BackgroundScreenStack#383(depth:0) resume to [empty]
+2026-09-30 21:55:54 [verbose]: 📺 OsuScreenStack#334(depth:1) exit from IntroTriangles#492
+2026-09-30 21:55:54 [verbose]: 📺 OsuScreenStack#334(depth:1) resume to Loader#123
+2026-09-30 21:55:54 [verbose]: 📺 OsuScreenStack#334(depth:0) exit from Loader#123
+2026-09-30 21:55:54 [verbose]: 📺 OsuScreenStack#334(depth:0) resume to [empty]
+2026-09-30 21:55:54 [verbose]: Host execution state changed to Stopping
+2026-09-30 21:55:54 [verbose]: Host execution state changed to Stopped
