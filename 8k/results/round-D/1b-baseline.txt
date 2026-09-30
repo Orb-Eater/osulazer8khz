@@ -1,0 +1,91 @@
+format v3, 809935 frames, 1128170 update frames
+
+whole session
+          frames: 809935
+          span s: 137.1
+         avg fps: 5906.7
+      1% low fps: 1729.4
+    0.1% low fps: 1077.3
+          max ms: 10.59
+   frames > 1 ms: 176
+   frames > 2 ms: 5
+   frames > 5 ms: 2
+  frames > 20 ms: 0
+
+from first object (the first hit object becoming visible: StartTime - TimePreempt for osu!/catch, StartTime for other rulesets; files recorded before 2026-09-30 marked the first hit time instead)
+          frames: 793560
+          span s: 134.5
+         avg fps: 5902.1
+      1% low fps: 1764.0
+    0.1% low fps: 1110.7
+          max ms: 4.01
+   frames > 1 ms: 164
+   frames > 2 ms: 2
+   frames > 5 ms: 0
+  frames > 20 ms: 0
+
+update thread (from first object): 1097845 frames, mean 0.122 ms, max 4.30 ms, >1 ms 119, >5 ms 0
+
+attribution of slow frames (from first object)
+   band ms    frames   share      gap    ready upd-wait     draw     swap    other gen0 GC upd frame
+typical<.3    769282  96.94%    0.162    0.000    0.000    0.128    0.033    0.001   0.00%     0.125
+   0.3-0.4     15474   1.95%    0.344    0.000    0.002    0.158    0.182    0.001   0.06%     0.133
+   0.4-0.5      4003   0.50%    0.439    0.000    0.010    0.227    0.201    0.001  20.76%     0.197
+   0.5-0.7      3719   0.47%    0.584    0.000    0.009    0.452    0.121    0.002  79.30%     0.380
+     0.7-1       917   0.12%    0.801    0.000    0.029    0.550    0.220    0.002  77.97%     0.350
+       1-2       163   0.02%    1.114    0.000    0.067    0.870    0.170    0.006  93.87%     0.389
+        >2         2   0.00%    3.032    0.000    2.777    0.173    0.080    0.001 100.00%     0.161
+(means in ms; "upd frame" = length of the update frame that was running when the frame was presented)
+
+64 Hz check (from first object)
+FFT of the "frame > 0.3 ms" series (0.5 ms bins, 5-500 Hz): peak 64.00 Hz, 3653x the median power
+  power within 2 bins of 64 Hz: 3653x the median power
+phase-folded counts at 15.625 ms (16 bins, mean 1517.4): [1206, 1019, 819, 786, 715, 740, 1074, 1710, 2277, 2748, 2756, 2339, 1890, 1584, 1347, 1268]
+  max/min bin 3.85, max/mean 1.82 (flat = about 1.0)
+
+what-if GC frames were typical: 4660 frames with a GC (0.59%) replaced by the median non-GC frame (0.160 ms)
+         avg fps: 5902.1  ->  5997.0
+      1% low fps: 1764.0  ->  2321.7
+    0.1% low fps: 1110.7  ->  1551.9
+          max ms: 4.01  ->  1.19
+
+per second: 138 samples over 137.1 s
+  allocated: mean 9.35 MB/s, max 118.34 MB/s, total 1282.3 MB
+  GC pause: total 2076.83 ms, max in one second 110.52 ms, seconds with any pause 138
+  GCs: gen0 5270, gen1 265, gen2 0 (gen0 counts every GC, gen1 counts gen1+gen2)
+  worst: at 1 s: pause 110.52 ms, 77.73 MB/s, gen0 +330
+  worst: at 137 s: pause 85.29 ms, 118.34 MB/s, gen0 +311
+  worst: at 2 s: pause 85.03 ms, 63.80 MB/s, gen0 +269
+
+input delay (ms; keys use Windows message times for the os stamp, so os->pump is coarse for keys, see README)
+  from first object
+    keys+buttons: n=918
+              os->pump: mean 8.618 p50 8.784 p99 16.345 max 16.593
+          pump->update: mean 0.067 p50 0.064 p99 0.168 max 0.231
+            os->update: mean 8.686 p50 8.804 p99 16.407 max 16.691
+           os->present: mean 9.346 p50 9.473 p99 17.259 max 17.827
+       update->present: mean 0.661 p50 0.565 p99 1.500 max 1.742
+    mouse move: n=0
+              os->pump: n/a
+          pump->update: n/a
+            os->update: n/a
+           os->present: n/a
+       update->present: n/a
+  whole session
+    keys+buttons: n=920
+              os->pump: mean 8.620 p50 8.784 p99 16.345 max 16.593
+          pump->update: mean 0.067 p50 0.064 p99 0.168 max 0.231
+            os->update: mean 8.687 p50 8.804 p99 16.407 max 16.691
+           os->present: mean 9.347 p50 9.473 p99 17.255 max 17.827
+       update->present: mean 0.660 p50 0.565 p99 1.499 max 1.742
+    mouse move: n=0
+              os->pump: n/a
+          pump->update: n/a
+            os->update: n/a
+           os->present: n/a
+       update->present: n/a
+
+GC reasons and gen0 size (from the .txt)
+  gc reasons: AllocSmall 5270 [gen0 5005 gen1 265], Induced 1 [gen1 1]; 5271 events for 5271 GCs
+  gen0 size before the most recent GC, sampled per second: median 256 KB, min 256 KB, max 272 KB (138 samples)
+
