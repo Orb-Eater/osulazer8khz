@@ -89,12 +89,27 @@ From first object, round D (same map; delays in ms, keys+buttons, ~915 events pe
   64 Hz (15.625 ms) rhythm in the slow frames.
 
 
-## Round E (2026-09-30, cloud session): built, waiting on the owner
+## Changelog / START HERE (2026-09-30, end of the cloud session)
 
-E1 (pen lane), E2 (`OSU_RAW_KEYBOARD`) and the E3 measurement (`.bin` v4, update->present split) are built; see
-"Plan Step E" and "Step E built" in `PLAN-lows.md`. Launchers `1-baseline`, `2-interactive`, `3-rawkeyboard`,
-`4-rawkeyboard-interactive`. After the run: record the results table, ask what each felt like and whether typing / IME
-worked in 3 and 4, then choose the E3 change (candidate P1 "late update") from the split.
+Done and pushed (`8k-next` head after this note, `8k-next-framework` `9fe82f2`):
+- Step E built: pen input lane, `OSU_RAW_KEYBOARD=1`, `.bin` v4 (update->present split, frame age), analyser v4.
+- Round E played (same map, 5 runs; table and notes in `PLAN-lows.md`, "Step E results"; the raw files are not in the repo).
+  Raw keyboard gives keys real stamps (os->pump 8.4-8.9 -> 0.25 ms). Pen path measured: os->present ~1.1-1.2 ms, same in
+  all modes. Interactive no longer improved the lows. Owner: baseline felt like misses it should not have had; runs 2-4 not
+  judgeable (may have adapted); typing/IME in raw keyboard NOT tried.
+- Round F planned and built (`1-test.bat`, `2-test.bat`; neutral names at the owner's request, mapping in `PLAN-lows.md`,
+  "Plan Round F"): does the Step E recorder cost fps?
+
+**Open problem to resolve first:** round E fps is ~2,160 (2,458 overlay off), 1% low ~700, draw+swap ~0.48 ms, against ~5,900 /
+1,500-2,200 / ~0.16 ms in round D. The owner says map and settings were the same. Waiting on round F: `2-test.bat` (no recorder)
+~5,900 fps = the recorder costs fps, fix that first; still ~2,200-2,500 = look elsewhere (game build, framework changes
+between rounds; do not guess at Windows/driver causes, see the rules).
+
+**Where to continue:** repo `orb-eater/osulazer8khz`, branch `8k-next`, file `8k/PLAN-lows.md` (last two sections: "Step E results",
+"Plan Round F"); framework on `8k-next-framework`. After round F: record its table in `PLAN-lows.md`; then, only on the
+owner's yes, trace whether a key's SDL timestamp reaches hit judgement (not traced; the feel report makes it worth a code read);
+later the E3 change (candidate P1 "late update", est. gain 0.03-0.05 ms) and the "Not agreed" items below (ask first).
+Launcher naming: round F used `N-test.bat` at the owner's request, so the "always include 1-baseline.bat" rule is waived for it.
 
 ## Agreed next steps (in order)
 
