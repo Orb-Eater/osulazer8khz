@@ -1,5 +1,5 @@
 @echo off
-REM  ROUND E 2: only change = OSU_GC_MODE=Interactive (gameplay GC mode).
+REM  ROUND F 1: no change from play-8k-diagnose.bat (rerun, overlay off).
 REM ============================================================
 REM  osu!lazer 8k  --  DIAGNOSE RUN A (baseline + spike logger)
 REM  Same as play-8k.bat, plus: every gap between presented
@@ -15,6 +15,5 @@ set OSU_EXTERNAL_UPDATE_PROVIDER=1
 set OSU_INPUT_HZ=4000
 set OSU_SPIKE_LOG_MS=5
 set OSU_FRAME_STATS=1
-set OSU_GC_MODE=Interactive
 
 start "" "%~dp0osu\osu.Desktop\bin\Release\net10.0\osu!.exe"

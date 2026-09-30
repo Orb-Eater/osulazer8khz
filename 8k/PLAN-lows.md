@@ -350,3 +350,14 @@ the owner's first message named the wrong file and was replaced by the second), 
   against ~0.16 before. Same map, settings and display as round D is unconfirmed; a regression in the Step E build is not ruled out.
 - What the user felt: all runs felt bad. Baseline felt like circles should have been hit that were not; for runs 2-4 the owner
   cannot say, because they may have adapted their play to the baseline. Typing/IME in 3 and 4 not tried.
+
+## Plan Round F (2026-09-30, owner offered to rerun): is the fps drop the recorder?
+Owner confirms round E used the same settings and map as round D, so the drop (~5,900 -> ~2,160 fps, draw+swap 0.16 -> 0.48 ms)
+is unexplained; the Step E recorder (pen lane, per-buffer publish time) is the only suspect in our code. Launchers are named
+neutrally at the owner's request (`N-test.bat`); the mapping is this table. Overlay off, same map, play in order.
+| # | launcher | change vs `play-8k-diagnose.bat` |
+|---|---|---|
+| 1 | `1-test.bat` | none |
+| 2 | `2-test.bat` | `OSU_FRAME_STATS` removed (no recorder); measure with CapFrameX |
+Reading: if 2 is also ~2,1xx-2,4xx fps, the recorder is not the cause (look at the environment / game build); if it is near
+5,900, the recorder costs fps and gets fixed first. The round E launchers (`1-baseline`..`4-rawkeyboard-interactive`) are removed.
