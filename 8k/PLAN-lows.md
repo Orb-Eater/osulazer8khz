@@ -364,16 +364,18 @@ Reading: if 2 is also ~2,1xx-2,4xx fps, the recorder is not the cause (look at t
 
 ## Step F results (2026-09-30, round F: two runs, same map, overlay off; only the `[framestats]`/`[inputdelay]` text, not the `.bin`)
 
-The owner sent two recorder outputs, named "test1" (played first) and "test2" (played second). **Neither matches its launcher as
-committed.** `1-test.bat` sets no `OSU_GC_MODE` and no `OSU_RAW_KEYBOARD`; `2-test.bat` has no recorder, so it cannot produce a
-`[framestats]` line at all. What the files themselves show (the config is not written into the log, so this is inferred):
-- "test1": keys os->pump 0.24 ms (real stamps = raw keyboard was on), 73 GCs with gen0 ~18 MB (an Interactive-style GC mode).
-  That is round E launcher 4 (raw keyboard + Interactive: 0.24 / 73 GCs / 2,194 fps). Probably a stale round E launcher was run.
-- "test2": keys os->pump 8.5 ms (old stamps), 5,867 GCs with gen0 256 KB (upstream LowLatency), recorder on. That is what
-  `1-test.bat` should give, and it reproduces round D's baseline.
-- No run of `2-test.bat` (no recorder) came back. Not yet known whether it was played.
+The owner sent two recorder outputs and later a third file. **Correction from the owner:** the file the first message called
+"test1" (played first) is NOT a round F run; the real `1-test.bat` run is the file that message called "test2", and the real `2-test.bat`
+run (no recorder) is a `.performance.log`, which has no fps data (texture-atlas lines only; the fps has to come from CapFrameX).
+Below, "stray run" = the file with raw keyboard on; "1-test" = the real `1-test.bat` run. What the files show (the config is not
+written into the log, so this is inferred):
+- "stray run": keys os->pump 0.24 ms (raw keyboard on), 73 GCs with gen0 ~18 MB (Interactive-style GC). Matches round E launcher 4
+  (raw keyboard + Interactive: 0.24 / 73 GCs / 2,194 fps), so probably a stale round E launcher.
+- "1-test": keys os->pump 8.5 ms (old stamps), 5,867 GCs with gen0 256 KB (upstream LowLatency), recorder on = `1-test.bat`; it
+  reproduces round D's baseline.
+- `2-test.bat` (no recorder): no fps numbers received yet.
 From first object; delays in ms. Pen = the tablet cursor path.
-| | "test1" (raw kbd + Interactive-style GC) | "test2" (baseline config) | round D baseline 1b | round E run 4 (raw + Interactive) |
+| | stray run (raw kbd + Interactive-style GC) | 1-test (baseline config) | round D baseline 1b | round E run 4 (raw + Interactive) |
 |---|---|---|---|---|
 | avg fps | 2,194 | **6,073** | 5,902 | 2,194 |
 | 1% low / 0.1% low | 692 / 464 | **1,782 / 1,057** | 1,764 / 1,111 | 692 / 464 |
@@ -403,7 +405,7 @@ From first object; delays in ms. Pen = the tablet cursor path.
 - What the owner felt: not yet reported.
 
 ### Open after round F
-1. Which launcher produced each file, and whether `2-test.bat` was played (owner to confirm).
+1. CapFrameX numbers for `2-test.bat` (avg fps, 1% low, 0.1% low), optional now that the recorder is cleared.
 2. Why the same config is 2,160 fps in one session and 6,070 in another. To find out without guessing, the log needs to say what
    state each run was in. Proposed (needs the owner's yes, not in "Agreed next steps"): write one `[config]` line at the start of
    the recorder's output with the active `OSU_*` variables, the game and framework commit, and the renderer, window mode and
