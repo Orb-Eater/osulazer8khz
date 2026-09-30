@@ -606,18 +606,30 @@ namespace osu.Framework.Platform.SDL3
 
         private void handlePenMotionEvent(SDL_PenMotionEvent evtPenMotion)
         {
+            if (FrameStats.Enabled)
+                FrameStats.SetInputEvent(evtPenMotion.timestamp);
+
             if (tryGetPenDeviceType(evtPenMotion.which, out var type))
                 PenMove?.Invoke(type, new Vector2(evtPenMotion.x, evtPenMotion.y) * Scale, evtPenMotion.pen_state.HasFlagFast(SDL_PenInputFlags.SDL_PEN_INPUT_DOWN));
             else
                 Logger.Log($"Unexpected SDL_EVENT_PEN_MOTION for pen id={evtPenMotion.which}. Pen not in proximity.", level: LogLevel.Important);
+
+            if (FrameStats.Enabled)
+                FrameStats.ClearInputEvent();
         }
 
         private void handlePenTouchEvent(SDL_PenTouchEvent evtPenTouch)
         {
+            if (FrameStats.Enabled)
+                FrameStats.SetInputEvent(evtPenTouch.timestamp);
+
             if (tryGetPenDeviceType(evtPenTouch.which, out var type))
                 PenTouch?.Invoke(type, evtPenTouch.down, new Vector2(evtPenTouch.x, evtPenTouch.y) * Scale);
             else
                 Logger.Log($"Unexpected {evtPenTouch.type} for pen id={evtPenTouch.which}. Pen not in proximity.", level: LogLevel.Important);
+
+            if (FrameStats.Enabled)
+                FrameStats.ClearInputEvent();
         }
 
         /// <summary>
@@ -629,10 +641,16 @@ namespace osu.Framework.Platform.SDL3
         {
             var button = (TabletPenButton)(evtPenButton.button - first_pen_button);
 
+            if (FrameStats.Enabled)
+                FrameStats.SetInputEvent(evtPenButton.timestamp);
+
             if (button >= TabletPenButton.Primary && button <= TabletPenButton.Button8)
                 PenButton?.Invoke(button, evtPenButton.down);
             else
                 Logger.Log($"Dropping SDL_PenButtonEvent with button index={evtPenButton.button} (out of range).");
+
+            if (FrameStats.Enabled)
+                FrameStats.ClearInputEvent();
         }
 
         private MouseButton mouseButtonFromEvent(SDLButton button)

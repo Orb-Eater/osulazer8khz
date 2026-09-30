@@ -1,6 +1,7 @@
 // Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
+using System.Collections.Generic;
 using osu.Framework.Bindables;
 using osu.Framework.Input.StateChanges;
 using osu.Framework.Platform;
@@ -63,29 +64,41 @@ namespace osu.Framework.Input.Handlers.Pen
             base.Reset();
         }
 
+        public override void CollectPendingInputs(List<IInput> inputs)
+        {
+            int before = inputs.Count;
+            base.CollectPendingInputs(inputs);
+
+            if (FrameStats.Enabled)
+                FrameStats.InputsConsumed(2, inputs.Count - before);
+        }
+
         private void handlePenMove(TabletPenDeviceType deviceType, Vector2 position, bool pressed)
         {
             if (pressed && deviceType == TabletPenDeviceType.Direct)
-                enqueueInput(new TouchInput(new Input.Touch(TouchSource.PenTouch, position), true));
+                enqueueInput(new TouchInput(new Input.Touch(TouchSource.PenTouch, position), true), 5);
             else
-                enqueueInput(new MousePositionAbsoluteInputFromPen { DeviceType = deviceType, Position = applySensitivity(position) });
+                enqueueInput(new MousePositionAbsoluteInputFromPen { DeviceType = deviceType, Position = applySensitivity(position) }, 5);
         }
 
         private void handlePenTouch(TabletPenDeviceType deviceType, bool pressed, Vector2 position)
         {
             if (deviceType == TabletPenDeviceType.Direct)
-                enqueueInput(new TouchInput(new Input.Touch(TouchSource.PenTouch, position), pressed));
+                enqueueInput(new TouchInput(new Input.Touch(TouchSource.PenTouch, position), pressed), pressed ? (byte)6 : (byte)7);
             else
-                enqueueInput(new MouseButtonInputFromPen(pressed) { DeviceType = deviceType });
+                enqueueInput(new MouseButtonInputFromPen(pressed) { DeviceType = deviceType }, pressed ? (byte)6 : (byte)7);
         }
 
         private void handlePenButton(TabletPenButton button, bool pressed)
         {
-            enqueueInput(new TabletPenButtonInput(button, pressed));
+            enqueueInput(new TabletPenButtonInput(button, pressed), pressed ? (byte)8 : (byte)9);
         }
 
-        private void enqueueInput(IInput input)
+        private void enqueueInput(IInput input, byte frameStatsKind)
         {
+            if (FrameStats.Enabled)
+                FrameStats.InputEnqueued(2, frameStatsKind);
+
             PendingInputs.Enqueue(input);
             FrameStatistics.Increment(StatisticsCounterType.TabletEvents);
             statistic_total_events.Value++;

@@ -225,6 +225,13 @@ namespace osu.Framework.Platform.SDL3
             SDL_SetHint(SDL_HINT_PEN_MOUSE_EVENTS, "0"u8).LogErrorIfFailed();
             SDL_SetHint(SDL_HINT_IME_IMPLEMENTED_UI, "composition"u8).LogErrorIfFailed();
 
+            if (FrameworkEnvironment.RawKeyboard)
+            {
+                // Keyboard through raw input: a real (QPC) timestamp per key. Harmless on other platforms. See the README.
+                SDL_SetHint(SDL_HINT_WINDOWS_RAW_KEYBOARD, "1"u8).LogErrorIfFailed();
+                Logger.Log("[input] raw keyboard on");
+            }
+
             SDLWindowHandle = SDL_CreateWindow(title, Size.Width, Size.Height, flags);
 
             if (SDLWindowHandle == null)

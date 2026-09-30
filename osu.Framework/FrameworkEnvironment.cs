@@ -60,6 +60,12 @@ namespace osu.Framework
         public static bool FrameStats { get; }
 
         /// <summary>
+        /// Whether SDL reads the keyboard through Windows raw input (<c>SDL_HINT_WINDOWS_RAW_KEYBOARD</c>), from the <c>OSU_RAW_KEYBOARD</c> environment variable.
+        /// Defaults to disabled (upstream behaviour).
+        /// </summary>
+        public static bool RawKeyboard { get; }
+
+        /// <summary>
         /// Whether the draw thread's busy-wait for a new update frame issues a CPU pause hint each iteration,
         /// from the <c>OSU_SPIN_PAUSE</c> environment variable. Defaults to disabled (upstream behaviour).
         /// </summary>
@@ -126,6 +132,7 @@ namespace osu.Framework
             SpikeLogMs = double.TryParse(Environment.GetEnvironmentVariable("OSU_SPIKE_LOG_MS"), NumberStyles.Float, CultureInfo.InvariantCulture, out double spikeMs) && spikeMs > 0 ? spikeMs : 0;
             FrameStats = parseBool(Environment.GetEnvironmentVariable("OSU_FRAME_STATS")) ?? false;
             SpinPause = parseBool(Environment.GetEnvironmentVariable("OSU_SPIN_PAUSE")) ?? false;
+            RawKeyboard = parseBool(Environment.GetEnvironmentVariable("OSU_RAW_KEYBOARD")) ?? false;
 
             // Gameplay GC behaviour. All default to upstream behaviour.
             string? gcMode = Environment.GetEnvironmentVariable("OSU_GC_MODE");

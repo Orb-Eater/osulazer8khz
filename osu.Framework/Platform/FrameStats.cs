@@ -29,16 +29,16 @@ namespace osu.Framework.Platform
     /// and a matching <c>.txt</c> into the <c>framestats</c> folder of the game's data directory.
     /// </para>
     /// <para>
-    /// Input delay: for every key press/release, mouse button press/release and mouse move the game records when the OS stamped the event (SDL's own
+    /// Input delay: for every key press/release, mouse button press/release, mouse move and pen move/touch/button the game records when the OS stamped the event (SDL's own
     /// timestamp, see the README for what clock that is), when the input thread handled it, when the update thread consumed it, and when the first
     /// frame containing that update frame was presented. Only kinds and times are kept, never which key or button or where the mouse was.
     /// </para>
     /// <para>
-    /// .bin format, version 3 (2 without the input section), all little-endian: a 64 byte fixed header, then <c>u32 length + UTF-8 field list</c>, then the columns
+    /// .bin format, version 4 (version 3 had no draw-frame update index and no publish time, 2 had no input section), all little-endian: a 64 byte fixed header, then <c>u32 length + UTF-8 field list</c>, then the columns
     /// in field-list order, each column contiguous.
     /// <code>
     ///   0  char[8] magic "OSUFRMST"
-    ///   8  u32 version (3)
+    ///   8  u32 version (4)
     ///  12  u32 header size = offset of the first column (64 + 4 + field list length)
     ///  16  u32 frame count N        20  u32 update-frame count U      24  u32 per-second sample count S
     ///  28  i32 first-object draw-frame index, -1 if never marked (an index into the frame columns)
@@ -49,10 +49,12 @@ namespace osu.Framework.Platform
     ///  52  u32 input flags: bit0 an input buffer filled up, bit1 events were lost before the update thread consumed them
     ///  56  f64 first-object time in ms after the draw origin, -1 if never marked
     /// </code>
-    /// Field list: <c>frame[gap_ms:f32,ready_wait_ms:f32,update_wait_ms:f32,draw_ms:f32,swap_ms:f32,gc0:u8];update[frame_ms:f32];second[elapsed_s:f64,alloc_bytes:u64,gc_pause_ms:f64,gen0:u32,gen1:u32,gen2:u32];input[pump_ms:f64,os_to_pump_ms:f32,pump_to_update_ms:f32,update_to_present_ms:f32,kind:u8]</c>.
+    /// Field list: <c>frame[gap_ms:f32,ready_wait_ms:f32,update_wait_ms:f32,draw_ms:f32,swap_ms:f32,gc0:u8,update_index:i32];update[frame_ms:f32,publish_ms:f32];second[elapsed_s:f64,alloc_bytes:u64,gc_pause_ms:f64,gen0:u32,gen1:u32,gen2:u32];input[pump_ms:f64,os_to_pump_ms:f32,pump_to_update_ms:f32,update_to_present_ms:f32,kind:u8]</c>.
     /// The input section has I entries (see the README for the meaning of each time; NaN = not available). The frame section has N entries per column, update has U, second has S. Draw frame k is presented at the sum of gap_ms[0..k] after the origin
     /// (the first present of the session, which is not itself recorded). Update record j is the time from the start of update frame j to the start of
-    /// update frame j+1; update frame j starts at update_origin_offset_ms + sum(frame_ms[0..j-1]) after the draw origin. gc0 is 1 if
+    /// update frame j+1; update frame j starts at update_origin_offset_ms + sum(frame_ms[0..j-1]) after the draw origin. publish_ms is the time from the start of
+    /// update frame j until its draw root was stored in the triple buffer (NaN if not recorded). update_index is the update frame that draw frame drew (-1 = unknown).
+    /// Draw frame k started drawing at present(k) - swap_ms[k] - draw_ms[k]. gc0 is 1 if
     /// <c>GC.CollectionCount(0)</c> changed since the previous frame. Per-second rows are deltas over the interval ending at elapsed_s
     /// (seconds after update frame 0); the last row is the partial final interval. gen0 counts every GC, gen1 every gen1 and gen2 GC, gen2 gen2 only.
     /// </para>
@@ -64,11 +66,12 @@ namespace osu.Framework.Platform
         private const int second_capacity = 7200;
         private const int key_input_capacity = 64 * 1024;
         private const int mouse_input_capacity = 4 * 1024 * 1024;
+        private const int pen_input_capacity = 4 * 1024 * 1024;
         private const int input_ring = 64 * 1024;
         private const int header_fixed = 64;
 
         private const string field_list =
-            "frame[gap_ms:f32,ready_wait_ms:f32,update_wait_ms:f32,draw_ms:f32,swap_ms:f32,gc0:u8];update[frame_ms:f32];second[elapsed_s:f64,alloc_bytes:u64,gc_pause_ms:f64,gen0:u32,gen1:u32,gen2:u32];input[pump_ms:f64,os_to_pump_ms:f32,pump_to_update_ms:f32,update_to_present_ms:f32,kind:u8]";
+            "frame[gap_ms:f32,ready_wait_ms:f32,update_wait_ms:f32,draw_ms:f32,swap_ms:f32,gc0:u8,update_index:i32];update[frame_ms:f32,publish_ms:f32];second[elapsed_s:f64,alloc_bytes:u64,gc_pause_ms:f64,gen0:u32,gen1:u32,gen2:u32];input[pump_ms:f64,os_to_pump_ms:f32,pump_to_update_ms:f32,update_to_present_ms:f32,kind:u8]";
 
         private static readonly bool enabled = FrameworkEnvironment.FrameStats;
 
@@ -82,6 +85,9 @@ namespace osu.Framework.Platform
 
         // Update thread column.
         private static readonly float[]? updateMs = enabled ? new float[update_capacity] : null;
+
+        // Time from the start of each update frame to the moment its draw root was stored (parallel to updateMs, but the frame still in progress at End is not serialised).
+        private static readonly float[]? publishMs = enabled ? new float[update_capacity + 1] : null;
 
         // Per-second samples (update thread).
         private static readonly double[]? secElapsed = enabled ? new double[second_capacity] : null;
@@ -106,8 +112,8 @@ namespace osu.Framework.Platform
         // Offset that turns SDL_GetTicksNS() (nanoseconds) into Stopwatch ticks. SDL's clock is QueryPerformanceCounter based, so it is constant.
         private static readonly long sdlToStopwatchTicks = enabled ? measureSdlOffset() : 0;
 
-        // Lane 0 = keyboard handler, lane 1 = mouse handler. Each lane is fed by the input thread and drained by the update thread.
-        private static readonly InputLane[]? lanes = enabled ? new[] { new InputLane(key_input_capacity), new InputLane(mouse_input_capacity) } : null;
+        // Lane 0 = keyboard handler, lane 1 = mouse handler, lane 2 = pen handler. Each lane is fed by the input thread and drained by the update thread.
+        private static readonly InputLane[]? lanes = enabled ? new[] { new InputLane(key_input_capacity), new InputLane(mouse_input_capacity), new InputLane(pen_input_capacity) } : null;
 
         // Input thread only: the SDL event being handled right now.
         private static ulong eventOsNs;
@@ -160,8 +166,12 @@ namespace osu.Framework.Platform
         // Input rows merged from both lanes by the finishing task.
         private static double[]? inPumpMs;
         private static float[]? inOsToPump, inPumpToUpdate, inUpdateToPresent;
+        private static float[]? inUpdateToPublish, inPublishToDraw, inDrawToPresent;
         private static byte[]? inKind;
         private static int inCount;
+
+        // Per draw frame (finishing task): present time minus the start of the update frame it drew, and minus that frame's publish time. NaN = not available.
+        private static float[]? ageAtPresent, publishToPresentMs;
 
         /// <summary>
         /// The storage the raw files are written to. Set by <see cref="GameHost"/>; falls back to the user's application data folder.
@@ -259,6 +269,7 @@ namespace osu.Framework.Platform
             {
                 updateStarted = true;
                 updateOrigin = lastUpdate = now;
+                publishMs![0] = float.NaN;
                 nextSample = now + Stopwatch.Frequency;
                 snapshotCounters();
                 return;
@@ -270,6 +281,9 @@ namespace osu.Framework.Platform
                 updateFull = true;
 
             lastUpdate = now;
+
+            if (updateCount < update_capacity)
+                publishMs![updateCount] = float.NaN;
 
             if (now >= nextSample)
             {
@@ -321,10 +335,22 @@ namespace osu.Framework.Platform
         /// <summary>
         /// Called on the update thread when it stores a new draw root, with the index of the buffer it wrote.
         /// </summary>
-        internal static void BufferWritten(int bufferIndex) => bufferUpdate[bufferIndex] = open && updateStarted && !updateFull ? updateCount : -1;
+        internal static void BufferWritten(int bufferIndex)
+        {
+            if (open && updateStarted && !updateFull)
+            {
+                int frame = updateCount;
+                bufferUpdate[bufferIndex] = frame;
+
+                if (frame <= update_capacity)
+                    publishMs![frame] = (float)((Stopwatch.GetTimestamp() - lastUpdate) * ticksToMs);
+            }
+            else
+                bufferUpdate[bufferIndex] = -1;
+        }
 
         /// <summary>
-        /// Called on the input thread at the start of handling a key, mouse button or mouse motion event, with the event's SDL timestamp (nanoseconds).
+        /// Called on the input thread at the start of handling a key, mouse button, mouse motion or pen event, with the event's SDL timestamp (nanoseconds).
         /// </summary>
         internal static void SetInputEvent(ulong sdlTimestampNs, bool keyRepeat = false)
         {
@@ -345,8 +371,8 @@ namespace osu.Framework.Platform
         /// <summary>
         /// Called on the input thread by an input handler just before it enqueues an input (so the record exists before the update thread can dequeue it).
         /// </summary>
-        /// <param name="lane">0 for the keyboard handler, 1 for the mouse handler.</param>
-        /// <param name="kind">0 key down, 1 key up, 2 mouse button down, 3 mouse button up, 4 mouse move, 255 not measured (still counted).</param>
+        /// <param name="lane">0 for the keyboard handler, 1 for the mouse handler, 2 for the pen handler.</param>
+        /// <param name="kind">0 key down, 1 key up, 2 mouse button down, 3 mouse button up, 4 mouse move, 5 pen move, 6 pen touch down, 7 pen touch up, 8 pen button down, 9 pen button up, 255 not measured (still counted).</param>
         internal static void InputEnqueued(int lane, byte kind)
         {
             long pump = eventPump;
@@ -659,6 +685,9 @@ namespace osu.Framework.Platform
             inOsToPump = new float[total];
             inPumpToUpdate = new float[total];
             inUpdateToPresent = new float[total];
+            inUpdateToPublish = new float[total];
+            inPublishToDraw = new float[total];
+            inDrawToPresent = new float[total];
             inKind = new byte[total];
 
             // Present time of draw frame k = sum of gap_ms[0..k] after the draw origin.
@@ -669,6 +698,26 @@ namespace osu.Framework.Platform
             {
                 acc += gapMs![k];
                 presentMs[k] = acc;
+            }
+
+            // Start of update frame j = update origin offset + sum of frame_ms[0..j-1], after the draw origin. Frame u (still running at the end) has a start but no publish time.
+            int u = updateCount;
+            double[] updateStartMs = new double[u + 1];
+            updateStartMs[0] = (updateOrigin - drawOrigin) * ticksToMs;
+
+            for (int j = 1; j <= u; j++)
+                updateStartMs[j] = updateStartMs[j - 1] + updateMs![j - 1];
+
+            // Frame age at present for every draw frame.
+            ageAtPresent = new float[n];
+            publishToPresentMs = new float[n];
+
+            for (int k = 0; k < n; k++)
+            {
+                int j = drawnUpdate![k];
+                bool known = j >= 0 && j <= u;
+                ageAtPresent[k] = known ? (float)(presentMs[k] - updateStartMs[j]) : float.NaN;
+                publishToPresentMs[k] = known && j < u && !float.IsNaN(publishMs![j]) ? (float)(presentMs[k] - (updateStartMs[j] + publishMs[j])) : float.NaN;
             }
 
             int o = 0;
@@ -693,7 +742,20 @@ namespace osu.Framework.Platform
                         else lo = mid + 1;
                     }
 
-                    inUpdateToPresent[o] = lo < n ? (float)(presentMs[lo] - (lane.Update[r] - drawOrigin) * ticksToMs) : float.NaN;
+                    double consumeMs = (lane.Update[r] - drawOrigin) * ticksToMs;
+                    inUpdateToPresent[o] = lo < n ? (float)(presentMs[lo] - consumeMs) : float.NaN;
+
+                    // update = consume -> publish of the consuming update frame, queue = publish -> start of the presenting draw, draw+swap = draw start -> present.
+                    inUpdateToPublish[o] = inPublishToDraw[o] = inDrawToPresent[o] = float.NaN;
+
+                    if (lo < n && j >= 0 && j < u && !float.IsNaN(publishMs![j]))
+                    {
+                        double publishAbs = updateStartMs[j] + publishMs[j];
+                        double drawStart = presentMs[lo] - swapMs![lo] - drawMs![lo];
+                        inUpdateToPublish[o] = (float)(publishAbs - consumeMs);
+                        inPublishToDraw[o] = (float)(drawStart - publishAbs);
+                        inDrawToPresent[o] = (float)(presentMs[lo] - drawStart);
+                    }
                 }
             }
 
@@ -707,7 +769,7 @@ namespace osu.Framework.Platform
 
             long firstTicks = Volatile.Read(ref firstObjectTicks);
             double firstMs = firstTicks != 0 ? (firstTicks - drawOrigin) * ticksToMs : double.NaN;
-            var sb = new StringBuilder("[inputdelay] ms; os = SDL event timestamp, pump = input thread, update = update thread consumed it, present = end of the first swap drawing that update frame");
+            var sb = new StringBuilder("[inputdelay] ms; os = SDL event timestamp, pump = input thread, update = update thread consumed it, present = end of the first swap drawing that update frame; update->present = update(consume->publish) + queue(publish->draw start) + draw+swap(draw start->present), left out (n/a) where the consuming update frame has no publish time");
 
             if (!double.IsNaN(firstMs))
                 appendInputGroups(sb, "from first object", firstMs);
@@ -715,6 +777,13 @@ namespace osu.Framework.Platform
                 sb.Append(" | first object not marked");
 
             appendInputGroups(sb, "whole session", double.NegativeInfinity);
+
+            int firstFrame = Volatile.Read(ref firstObjectFrame);
+
+            if (firstFrame >= 0 && firstFrame < ageAtPresent!.Length)
+                appendFrameAge(sb, "from first object", firstFrame);
+
+            appendFrameAge(sb, "whole session", 0);
 
             foreach (var lane in lanes!)
             {
@@ -728,22 +797,27 @@ namespace osu.Framework.Platform
         private static void appendInputGroups(StringBuilder sb, string title, double fromMs)
         {
             sb.Append(" | ").Append(title).Append(':');
-            appendInputGroup(sb, "keys+buttons", fromMs, false);
-            appendInputGroup(sb, "mouse move", fromMs, true);
+            appendInputGroup(sb, "keys+buttons", fromMs, 0, 3);
+            appendInputGroup(sb, "mouse move", fromMs, 4, 4);
+            appendInputGroup(sb, "pen move", fromMs, 5, 5);
+            appendInputGroup(sb, "pen touch+buttons", fromMs, 6, 9);
         }
 
-        private static void appendInputGroup(StringBuilder sb, string name, double fromMs, bool mouseMove)
+        private static void appendInputGroup(StringBuilder sb, string name, double fromMs, int kindFrom, int kindTo)
         {
             var osPump = new List<float>();
             var pumpUpdate = new List<float>();
             var osUpdate = new List<float>();
             var osPresent = new List<float>();
             var updatePresent = new List<float>();
+            var updatePublish = new List<float>();
+            var publishDraw = new List<float>();
+            var drawPresent = new List<float>();
             int count = 0;
 
             for (int i = 0; i < inCount; i++)
             {
-                if ((inKind![i] == 4) != mouseMove) continue;
+                if (inKind![i] < kindFrom || inKind[i] > kindTo) continue;
                 if (inPumpMs![i] + inPumpToUpdate![i] < fromMs) continue;
 
                 count++;
@@ -760,6 +834,13 @@ namespace osu.Framework.Platform
 
                 if (!float.IsNaN(inUpdateToPresent![i]))
                     updatePresent.Add(inUpdateToPresent[i]);
+
+                if (!float.IsNaN(inUpdateToPublish![i]))
+                {
+                    updatePublish.Add(inUpdateToPublish[i]);
+                    publishDraw.Add(inPublishToDraw![i]);
+                    drawPresent.Add(inDrawToPresent![i]);
+                }
             }
 
             sb.Append(" [").Append(name).Append(" n=").Append(count.ToString(CultureInfo.InvariantCulture)).Append(']');
@@ -768,6 +849,28 @@ namespace osu.Framework.Platform
             appendMetric(sb, "os->update", osUpdate);
             appendMetric(sb, "os->present", osPresent);
             appendMetric(sb, "update->present", updatePresent);
+            appendMetric(sb, "= update(consume->publish)", updatePublish);
+            appendMetric(sb, "+ queue(publish->draw start)", publishDraw);
+            appendMetric(sb, "+ draw+swap(draw start->present)", drawPresent);
+        }
+
+        private static void appendFrameAge(StringBuilder sb, string title, int fromFrame)
+        {
+            var age = new List<float>();
+            var publish = new List<float>();
+
+            for (int k = fromFrame; k < ageAtPresent!.Length; k++)
+            {
+                if (!float.IsNaN(ageAtPresent[k]))
+                    age.Add(ageAtPresent[k]);
+
+                if (!float.IsNaN(publishToPresentMs![k]))
+                    publish.Add(publishToPresentMs[k]);
+            }
+
+            sb.Append(" | ").Append(title).Append(": [frame age at present n=").Append(age.Count.ToString(CultureInfo.InvariantCulture)).Append(']');
+            appendMetric(sb, "present - start of update frame drawn", age);
+            appendMetric(sb, "present - its publish", publish);
         }
 
         private static void appendMetric(StringBuilder sb, string name, List<float> values)
@@ -864,7 +967,7 @@ namespace osu.Framework.Platform
 
             byte[] header = new byte[headerSize];
             Encoding.ASCII.GetBytes("OSUFRMST").CopyTo(header, 0);
-            BitConverter.TryWriteBytes(header.AsSpan(8), 3u);
+            BitConverter.TryWriteBytes(header.AsSpan(8), 4u);
             BitConverter.TryWriteBytes(header.AsSpan(12), (uint)headerSize);
             BitConverter.TryWriteBytes(header.AsSpan(16), (uint)n);
             BitConverter.TryWriteBytes(header.AsSpan(20), (uint)u);
@@ -886,7 +989,9 @@ namespace osu.Framework.Platform
             s.Write(MemoryMarshal.AsBytes(drawMs.AsSpan(0, n)));
             s.Write(MemoryMarshal.AsBytes(swapMs.AsSpan(0, n)));
             s.Write(gcFlag.AsSpan(0, n));
+            s.Write(MemoryMarshal.AsBytes(drawnUpdate.AsSpan(0, n)));
             s.Write(MemoryMarshal.AsBytes(updateMs.AsSpan(0, u)));
+            s.Write(MemoryMarshal.AsBytes(publishMs.AsSpan(0, u)));
             s.Write(MemoryMarshal.AsBytes(secElapsed.AsSpan(0, sec)));
             s.Write(MemoryMarshal.AsBytes(secAlloc.AsSpan(0, sec)));
             s.Write(MemoryMarshal.AsBytes(secPause.AsSpan(0, sec)));
